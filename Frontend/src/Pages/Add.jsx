@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import { useDispatch } from "react-redux";
+import { addProduct } from "../redux/Product/productslice";
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
+
 
 
 const Add = () => {
 
- const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
 
   const [product, setProduct] = useState({
     name: '',
@@ -22,33 +25,24 @@ const Add = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
-      const token = localStorage.getItem("token");
+      const result = await dispatch(addProduct(product));
 
-      if (!token) {
-       toast.error("You need to login first");
-        return;
+      if (addProduct.fulfilled.match(result)) {
+        navigate("/product");
       }
-  
-      const response = await axios.post("http://localhost:5001/api/product", product, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        },
-      });
-
-      toast.success(response.data.message);
-      navigate("/product");
-
-      setProduct({ name: '', price: '', Image: '', description: '' }); // empty the state
-
     } catch (error) {
-      toast.error(error.response?.data?.message || "Something went wrong"); 
+      console.log(error);
     }
   };
 
+
   return (
     <form className="flex justify-center items-start min-h-screen bg-gray-20" onSubmit={handleSubmit}>
-      <fieldset className="mt-40 mx-auto fieldset bg-gray-800 border-base-300 rounded-box w-1/3 shadow-xl p-6">
+      <fieldset className="mt-30 mx-auto fieldset bg-gray-800 border-base-300 rounded-box 
+                  w-11/13 sm:w-2/3 md:w-1/2 lg:w-1/3 shadow-xl p-6">
+                    
         <h2 className="text-2xl font-semibold mb-6 text-center">Add Product</h2>
 
         <label className="label p-2 text-sm">Product Name</label>
@@ -64,10 +58,11 @@ const Add = () => {
 
         <textarea className="textarea w-full" name="description" value={product.description} onChange={handleChange} />
 
-      
         <button type="submit" className="btn btn-neutral mt-4 w-full">Add Product</button>
-       
+
+
       </fieldset>
+      
     </form>
   );
 };

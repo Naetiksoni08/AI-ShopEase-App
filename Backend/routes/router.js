@@ -3,7 +3,10 @@ const authRoutes = require("./auth.routes");
 const productRoutes = require("./product.routes")
 const reviewRoutes = require("./review.Routes");
 const cartRoutes = require("./cart.routes");
+const SummarizerAgent = require("./ai.routes");
 const wishlistRoutes = require("./wishlist.routes");
+const OrderRoutes = require("../paymentapi/orderhistory");
+
 const { auth } = require("../middlewares/auth");
 
 
@@ -14,6 +17,9 @@ router.use("/product",productRoutes);
 router.use("/review",auth,reviewRoutes);
 router.use("/cart",auth,cartRoutes);
 router.use("/wishlist",auth,wishlistRoutes);
+router.use("/ai",auth, SummarizerAgent); 
+router.use("/orders", auth, OrderRoutes); 
+
 
 
 

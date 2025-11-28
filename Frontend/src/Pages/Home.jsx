@@ -1,14 +1,14 @@
-import React, { useContext } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { AuthContext } from "../Context/AuthContext";
 
 const Home = () => {
-  const { user } = useContext(AuthContext);
+  const user = localStorage.getItem("username");
+  const token = localStorage.getItem("token");
   const navigate = useNavigate();
 
   const handleViewProducts = () => {
-    if (!user) {
+    if (!token) {
       toast.warning("You need to log in first to view products!");
       return;
     }
@@ -39,7 +39,7 @@ const Home = () => {
           Discover, Shop & Inspire
         </h1>
         <p className="text-lg text-gray-200 mb-6 leading-relaxed">
-          Welcome to <span className="font-semibold text-indigo-400">E-Commerce</span> — your destination for unique products and endless creativity.
+          Welcome to <span className="font-semibold text-indigo-400">ShopEase</span> — your destination for unique products and endless creativity.
         </p>
 
         <div className="flex flex-wrap justify-center gap-4">

@@ -4,6 +4,11 @@ const api = require("../utils/api");
 
 module.exports.AddToWishlist = async (req, res) => {
   try {
+
+    if (req.user.role !== "buyer") {
+      return api.error(res, null, "Only buyers can use wishlist", 403);
+    }
+
     const userid = req.user.id;
     const { productid } = req.body;
     const user = await UserModel.findById(userid);
@@ -12,6 +17,7 @@ module.exports.AddToWishlist = async (req, res) => {
     if (user.wishlist.includes(productid)) {
       return api.error(res, null, "Product already in wishlist", 400);
     }
+    
 
     user.wishlist.push(productid);
     await user.save();
@@ -24,6 +30,10 @@ module.exports.AddToWishlist = async (req, res) => {
 
 module.exports.GetWishlist = async (req, res) => {
   try {
+
+    if (req.user.role !== "buyer") {
+      return api.error(res, null, "Only buyers can use wishlist", 403);
+    }
     const userid = req.user.id;
     const user = await UserModel.findById(userid).populate("wishlist");
     if (!user) return api.error(res, null, "User not found", 404);
@@ -36,6 +46,9 @@ module.exports.GetWishlist = async (req, res) => {
 
 module.exports.RemoveFromWishlist = async (req, res) => {
   try {
+    if (req.user.role !== "buyer") {
+      return api.error(res, null, "Only buyers can use wishlist", 403);
+    }
     const userid = req.user.id;
     const productid = req.params.id;
 

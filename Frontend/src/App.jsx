@@ -14,11 +14,16 @@ import "react-toastify/dist/ReactToastify.css";
 import Cart from './Pages/Cart'
 import axios from 'axios'
 import ProtectedRoute from './Components/ProtectedRoute'
-import { AuthContext } from './Context/AuthContext'
+import { useSelector } from 'react-redux'
+import OrderHistory from './Pages/Orderhistory'
+// import { AuthContext } from './Context/AuthContext'
 
 const App = () => {
-  const { user } = useContext(AuthContext);
+  // const { user } = useContext(AuthContext);
   const [cartItems, setCartItems] = useState([]);
+
+  const { token, username } = useSelector((state) => state.auth);
+  const user = token ? { username } : null;
 
 
 
@@ -40,7 +45,7 @@ const App = () => {
     } else {
       setCartItems([]);
     }
-  }, [user]);
+  }, [user?.username]);
 
 
 
@@ -62,6 +67,7 @@ const App = () => {
         <Route path="/product/cart" element={<ProtectedRoute> <Cart cartItems={cartItems} setCartItems={setCartItems} fetchCart={fetchCart} /> </ProtectedRoute>} />
         <Route path='/product/:id/show' element={<ProtectedRoute> <ShowProducts fetchCart={fetchCart} /></ProtectedRoute>} />
         <Route path='/product/edit/:id' element={<ProtectedRoute> <Editproduct /> </ProtectedRoute>} />
+        <Route path="/orders" element={<ProtectedRoute> <OrderHistory /> </ProtectedRoute>} />
       </Routes>
       </div>
 

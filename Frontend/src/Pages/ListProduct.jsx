@@ -1,33 +1,29 @@
-import React, { useEffect, useState } from 'react'
 import axios from 'axios';
+import React, { useEffect,useState } from 'react'
+import { useDispatch,useSelector } from 'react-redux';
+import { fetchProducts } from '../redux/Product/productslice';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FaHeart, FaRegHeart } from "react-icons/fa";
 
 const ListProduct = () => {
 
-
-  const [products, Setproducts] = useState([]);
-  const [wishlist, setWishlist] = useState([]);
+  const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  const { items: products } = useSelector((state) => state.product);
+  const role = useSelector((state) => state.auth.role);
+
+  const [wishlist, setWishlist] = useState([]);
+
   useEffect(() => {
-    axios.get('http://localhost:5001/api/product', {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`
-      }
-    })
-      .then(res => {
-        Setproducts(res.data.data.reverse());
-
-      })
-      .catch(err => console.log(err))
-  }, []);
-
+    dispatch(fetchProducts());
+  }, [dispatch]);
 
   // 💖 Fetch wishlist
   const fetchWishlist = async () => {
     try {
+      if (role !== "buyer") return;
       const res = await axios.get("http://localhost:5001/api/wishlist", {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
@@ -40,6 +36,7 @@ const ListProduct = () => {
   useEffect(() => {
     fetchWishlist();
   }, []);
+
 
   // 💖 Toggle Wishlist (Add / Remove)
   const toggleWishlist = async (productId) => {
@@ -74,12 +71,16 @@ const ListProduct = () => {
           {/* ❤️ Wishlist icon */}
           <button
             onClick={() => toggleWishlist(product._id)}
-            className="absolute top-3 right-3 z-10 text-red-500 hover:scale-110 transition"
+            disabled={role !== "buyer"} 
+            className={`absolute top-3 right-3 z-10 transition
+              ${role !== "buyer" ? "opacity-40 cursor-not-allowed" : "hover:scale-110"}
+            `}
           >
             {wishlist.includes(product._id) ? (
-              <FaHeart className="text-2xl" />
+             
+              <FaHeart className="text-2xl text-red-500" />
             ) : (
-              <FaRegHeart className="text-2xl text-gray-400 hover:text-red-400" />
+              <FaRegHeart className="text-2xl text-gray-400 hover:text-red-400 " />
             )}
           </button>
 
@@ -91,7 +92,7 @@ const ListProduct = () => {
 
           <div className="card-body">
             <h2 className="card-title">{product.name}</h2>
-            <p className="card-title">₹{product.price}</p>
+            <p className="card-title">₹{product.price.toLocaleString("en-IN")}</p>
             <p>{product.description}</p>
             <div className="card-actions justify-end">
               <button className="btn btn-primary" onClick={() => navigate(`/product/${product._id}/show`)}>Buy Now</button>

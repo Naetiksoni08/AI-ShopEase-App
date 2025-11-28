@@ -6,7 +6,7 @@ const app = express();
 const PORT = process.env.PORT;
 const connectdb = require("./config/db");
 const { auth: authMiddleware } = require("./middlewares/auth");
-const paymentRoutes = require('./api/paymentapi');
+const paymentRoutes = require('./paymentapi/paymentapi');
 
 
 

@@ -3,18 +3,35 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify';
 import ReactStars from "react-rating-stars-component";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchReviews, addReview, removeReview, } from "../redux/Review/reviewslice"
+import { LuMessageSquareText } from "react-icons/lu";
+import dayjs from 'dayjs';
+import relativeTime from "dayjs/plugin/relativeTime";
+dayjs.extend(relativeTime);
 
 
 const ShowProducts = () => {
 
   const { id } = useParams();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   //states
-  const [product, SetProduct] = useState();
-  const [newText, setnewText] = useState();
+  const [product, SetProduct] = useState(null);
+
+  const [newText, setnewText] = useState("");
   const [newRating, setNewRating] = useState(5);
-  const [reviews, SetReviews] = useState([]);
-  const navigate = useNavigate();
+
+  const [summary, setSummary] = useState("");
+
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const { reviews } = useSelector((state) => state.review);
+  const role = useSelector((state) => state.auth.role);
+
+
 
 
   useEffect(() => {
@@ -25,117 +42,112 @@ const ShowProducts = () => {
     })
       .then(res => SetProduct(res.data.data))
       .catch(err => console.log(err))
-
-    axios.get(`http://localhost:5001/api/review/product/${id}/reviews`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`
-      }
-    })
-      .then(res => SetReviews(res.data.data || []))
-      .catch(err => console.log(err));
-
   }, [id]);
   // product is dependent upon product id so we are saying react that whenever the id changes re fetch the product basically re run the use effect tho if u dont include id in the dependency array then also it will work normal and fine but it is a good practice so remember whenever ur product is dependent on something u should pass that thing in the dependency array
 
-
-
-
-  const submitReview = () => {
-    axios.post(`http://localhost:5001/api/review/product/${id}/reviews`,
-      { text: newText, rating: newRating },
-      { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
-    )
-      .then(res => {
-        setnewText("");
-        setNewRating(5);
-        toast.success(res.data.message || "Review submitted successfully!");
-
-        // Fetch latest reviews
-        return axios.get(`http://localhost:5001/api/review/product/${id}/reviews`, {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        });
-      })
-      .then(res => SetReviews(res.data.data || []))
-      .catch(error => {
-        console.log(error);
-        toast.error(error.response?.data?.message || "Failed to submit review!");
-      });
-  }
-
-  if (!product) {
-    return <p className='text-center mt-50 text-2xl text-gray-500'>Loading product....</p>
-  }
+  useEffect(() => {
+    dispatch(fetchReviews(id));
+  }, [id, dispatch]);
 
 
 
 
-  const deleteReview = async (reviewId) => {
-    try {
-      const res = await axios.delete(`http://localhost:5001/api/review/product/${id}/reviews/${reviewId}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      const updatedReviews = reviews.filter((rev) => rev._id !== reviewId);
-      SetReviews(updatedReviews);
-      toast.success(res.data.message || "Review deleted successfully!");
 
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to delete review!");
 
+  const submitReview = async () => {
+    if (!newText.trim()) {
+      toast.error("Review cannot be empty!");
+      return;
     }
-  }
+    if (newRating < 1) {
+      toast.warn("Rating must be at least 1 star");
+    }
+
+    const result = await dispatch(
+      addReview({
+        productId: id,
+        text: newText,
+        rating: newRating,
+      })
+    );
+
+    if (addReview.fulfilled.match(result)) {
+      toast.success("Review submitted Successfully!");
+      setnewText("");
+      setNewRating(5);
+    }
+  };
+
+
+  // Delete Review
+  const deleteReview = async (reviewId) => {
+    const result = await dispatch(removeReview({ productId: id, reviewId }));
+
+    if (removeReview.fulfilled.match(result)) {
+      toast.success("Review deleted Successfully!");
+    }
+  };
+
 
 
 
   const deleteProduct = async () => {
     try {
-      const { data } = await axios.delete(`http://localhost:5001/api/product/${id}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      })
+      const { data } = await axios.delete(
+        `http://localhost:5001/api/product/${id}`,
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        }
+      );
+
       toast.success(data.message || "Product deleted successfully!");
       navigate("/product");
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to delete product!");
     }
-  }
+  };
 
-  const handleBuyNow = async () => {
+  const summarizeReviews = async () => {
     try {
-      const { data } = await axios.post(
-        "http://localhost:5001/api/payment/order", {
-        amount: product.price
-      },
+      if (!reviews || reviews.length === 0) {
+        toast.warning("No reviews to summarize!");
+        return;
+      }
+
+      setLoading(true);
+
+      const reviewTexts = reviews.map(r => r.text);
+
+      const res = await axios.post(
+        "http://localhost:5001/api/ai/summarize",
         {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+          reviews: reviewTexts,
+          role: role
+        },
+
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          }
         }
       );
 
-      const order = data.data;
-      const options = {
-        key: "rzp_test_RUTxFqCzlLGV4C",
-        amount: order.amount,
-        currency: order.currency,
-        name: "My Shop",
-        description: product.name,
-        order_id: order.id,
-        handler: function (response) {
-          toast.success("Payment Successful!");
-        },
-        prefill: {
-          name: "Naetik Soni",
-          email: "naetik@example.com",
-          contact: "9999999999",
-        },
-        theme: { color: "#3399cc" },
-      };
-
-      const rzp = new window.Razorpay(options)
-      rzp.open();
-    } catch (error) {
-      console.log(error);
-      toast.error("Payment Failed. Please try again");
+      setSummary(res.data.summary);
+    } catch (err) {
+      toast.error("AI failed to summarize");
+    } finally {
+      setLoading(false);
     }
-
   };
+
+
+
+  const summarizeReviewsHandler = async () => {
+    await summarizeReviews();
+    setShowSummaryModal(true);
+  };
+
+
 
   const CartSubmitHandler = async () => {
     try {
@@ -145,109 +157,127 @@ const ShowProducts = () => {
         });
 
 
-      if (data && data.success) {
-        toast.success("Product Added To Cart");
-      } else {
-        toast.error(data?.message || "Failed to add to cart");
+
+      if (data?.success == true) {
+        toast.success(data.message || "Product Added To Cart");
+        navigate("/product/cart")
+        return;
       }
-
-
-      navigate("/product");
     } catch (error) {
-      toast.warn(error.response?.data?.message || "Failed to add to cart");
+      const msg = error.response?.data?.message || "Failed to add to cart";
+      toast.warn(msg);
+      return;
+
 
     }
   }
 
-  return (
-    <div className="flex ml-40 md:justify-items-start mt-30 gap-50">
+  if (!product) {
+    return <p className='text-center mt-50 text-2xl text-gray-500'>Loading product....</p>
+  }
 
-      {/* Left part */}
-      <div className="card bg-base-100 w-full md:w-1/3 shadow-xl h-1/2">
-        <figure>
+  return (
+    <div className="flex flex-col md:flex-row md:ml-40 mt-30 gap-10 space-y-6">
+
+      {/* LEFT PART (card + buttons together) */}
+      <div className="w-full md:w-3/5 lg:w-2/5 flex flex-col">
+
+        {/* Product Card */}
+        <div className="card bg-base-100 shadow-xl">
           <img
-            src={product.Image || "https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"}
+            className=" w-full sm:w-[500px] md:w-[550px] lg:w-[650px] xl:w-[750px] mx-auto rounded-lg object-cover p-5"
+            src={
+              product.Image ||
+              "https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"
+            }
             alt={product.name}
           />
-        </figure>
 
-        <div className="card-body">
-          <h2 className="card-title">{product.name}</h2>
-          <h2 className="card-title">₹{product.price}</h2>
-          <p>{product.description}</p>
-
-          <div className="card-actions justify-end mx-auto">
-            <button className="btn btn-primary" onClick={handleBuyNow}>
-              Buy Now
-            </button>
-
-            <button className="btn btn-secondary" onClick={CartSubmitHandler}>
-              Add to Cart
-            </button>
-
-            <button
-              className="btn btn-accent"
-              onClick={() => navigate(`/product/edit/${id}`)}
-            >
-              Edit
-            </button>
-
-            <button
-              className="btn btn-warning"
-              onClick={() => deleteProduct()}
-            >
-              Delete
-            </button>
+          <div className="card-body p-6 space-x-25 space-y-3">
+            <h2 className="card-title">{product.name}</h2>
+            <h2 className="card-title">₹{product.price.toLocaleString("en-IN")}</h2>
+            <p>{product.description}</p>
           </div>
+        </div>
+
+
+        {/* BUTTONS */}
+        <div className="card-actions justify-start gap-3 mt-5 ml-4">
+          {role === "buyer" && (
+            <>
+              <button className="btn btn-secondary" onClick={CartSubmitHandler}>
+                Add to Cart
+              </button>
+            </>
+          )}
+
+          {role === "seller" && (
+            <>
+
+              <button
+                className="btn btn-accent"
+                onClick={() => navigate(`/product/edit/${id}`)}
+              >
+                Edit
+              </button>
+
+              <button className="btn btn-warning" onClick={deleteProduct}>
+                Delete
+              </button>
+            </>
+          )}
+
         </div>
       </div>
 
-      {/* Right part */}
-      <div className="ml-10 w-1/2">
-        <h1 className="text-2xl font-bold mb-5">Leave a Review</h1>
-        <ReactStars
-          count={5}
-          value={newRating}
-          onChange={(newValue) => {
-            console.log("New rating:", newValue);
-            setNewRating(newValue);
-          }}
-          size={40}
-          isHalf={true}
-          edit={true}
-          activeColor="#facc15"
-          color="#4b5563"
-          emptyIcon={<i className="far fa-star" />}
-          halfIcon={<i className="fa fa-star-half-alt" />}
-          filledIcon={<i className="fa fa-star" />}
-        />
-        <textarea
-          className="textarea mt-5"
-          rows={3}
-          placeholder="Write your review..."
-          value={newText}
-          onChange={(e) => setnewText(e.target.value)}
-        ></textarea>
 
-        <button
-          onClick={submitReview}
-          className="btn btn-primary block mt-4"
-        >
-          Submit
-        </button>
 
-        <h2 className="text-xl font-bold mt-10 mb-3">Customer Reviews</h2>
+      {/* RIGHT PART (reviews) */}
+      <div className="w-full md:w-3/5 md:ml-50 mt-10 md:mt-0 flex flex-col text-center items-center md:items-start md:text-left">
+        {role == "buyer" && (
+          <>
+            <h1 className="text-2xl font-bold mb-5">Leave a Review</h1>
 
-        {reviews.length === 0 ? (
-          <p>No reviews yet. Be the first to review!</p>
-        ) : (
-          reviews.map((rev, index) => (
-            <div
-              key={index}
-              className="p-2 rounded-lg mb-5 bg-gray-900 w-80 shadow-lg"
-            >
-              <div className="flex items-center gap-2">
-                {/* ⭐ Display review stars */}
+            <ReactStars
+              count={5}
+              value={newRating}
+              onChange={(newValue) => setNewRating(newValue)}
+              size={40}
+              isHalf={true}
+              edit={true}
+              activeColor="#facc15"
+              color="#4b5563"
+              emptyIcon={<i className="far fa-star" />}
+              halfIcon={<i className="fa fa-star-half-alt" />}
+              filledIcon={<i className="fa fa-star" />}
+            />
+
+            <textarea
+              className="textarea mt-5"
+              rows={3}
+              placeholder="Write your review..."
+              value={newText}
+              onChange={(e) => setnewText(e.target.value)}
+            />
+
+            <button onClick={submitReview} className="btn btn-primary block mt-4">
+              Submit
+            </button>
+
+          </>
+        )}
+
+        <h2 className="text-xl semi-bold mt-10 mb-3">Customer Reviews</h2>
+        <div className="max-h-[400px] overflow-y-auto pr-2">
+
+          {[...reviews].reverse().length === 0 ? (
+            <p className="text-gray-500 mb-10 ">No reviews yet. Be the first to review!</p>
+          ) : (
+            [...reviews].reverse().map((rev, index) => (
+              <div
+                key={index}
+                className="p-2 rounded-lg mb-5 bg-gray-900 w-80 shadow-lg text-left"
+              >
                 <div className="flex items-center gap-2">
                   <ReactStars
                     count={5}
@@ -261,25 +291,82 @@ const ShowProducts = () => {
                     halfIcon={<i className="fa fa-star-half-alt" />}
                     filledIcon={<i className="fa fa-star" />}
                   />
+                  <p className="text-gray-400 text-sm">
+                    {dayjs(rev.createdAt).fromNow()}
+                  </p>
                 </div>
+
+                <p className="mt-5 text-white">{rev.text}</p>
+                {role === "buyer" && (
+                  <button
+                    className="rounded-xl text-sm bg-red-900 p-3 mt-5 cursor-pointer"
+                    onClick={() => deleteReview(rev._id)}
+                  >
+                    Delete
+                  </button>
+                )}
               </div>
-              <p className="mt-1 text-white">{rev.text}</p>
+            ))
+          )}
+        </div>
+      </div>
+
+
+      <div className="relative group">
+
+        <p
+          onClick={summarizeReviewsHandler}
+          className='fixed bottom-10 right-9 bg-gray-800 text-white p-5 rounded-full shadow-lg hover:bg-gray-700 cursor-pointer transition-all duration-200 text-2xl z-50'>
+          <LuMessageSquareText /></p>
+        {/*  tooltip */}
+        {role === "seller" && (
+          <>
+            <span className='fixed bottom-30 right-1 bg-gray-900 text-white text-sm py-2 px-3 rounded-xl shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-normal  w-56'>
+            Let AI summarize your customer reviews to understand what’s working best for your product.
+            </span>
+          </>
+        )}
+        {role === "buyer" && (
+          <>
+            <span className='fixed bottom-30 right-1 bg-gray-900 text-white text-sm py-2 px-3 rounded-xl shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-normalm w-56'>
+            Use AI to quickly understand what other customers liked about this product.
+            </span>
+          </>
+        )}
+        {loading && (
+          <p className="text-gray-400 text-center fixed bottom-3 right-1">
+            AI is thinking… ✨
+          </p>
+        )}
+
+        {showSummaryModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50">
+
+            <div className="bg-gray-900 p-6 rounded-2xl shadow-xl w-11/12 max-w-2xl max-h-[80vh] overflow-y-auto">
+              <h2 className="text-2xl font-bold mb-4 text-white">AI Summary</h2>
+
+
+              <p className="text-gray-300 whitespace-pre-line">{summary}</p>
+
 
               <button
-                className="rounded-xl text-sm bg-red-900 p-3 mt-3 cursor-pointer"
-                onClick={() => deleteReview(rev._id)}
+                onClick={() => setShowSummaryModal(false)}
+                className="mt-6 bg-red-700  hover:bg-red-800 text-white py-2 px-4 rounded-lg transition-all duration-200 cursor-pointer"
               >
-                Delete
+                Close
               </button>
             </div>
-          ))
+          </div>
         )}
       </div>
     </div>
+
+
   );
-};
+}
 
 export default ShowProducts;
+
 
 
 

@@ -2,10 +2,12 @@ const ProductModel = require("../models/productSchema");
 const api = require("../utils/api");
 
 
+
+
 module.exports.CreateProduct = async (req, res) => {
     try {
         const { name, price, Image, description } = req.body;
-        const product = await ProductModel.create({ name, price, Image, description });
+        const product = await ProductModel.create({ name, price, Image, description});
         api.success(res, product);
     } catch (error) {
         api.error(res, error, "Failed to create product");
@@ -58,7 +60,7 @@ module.exports.UpdateProduct = async (req, res) => {
         api.error(res, error, "Failed to update product");
     }
 }
- 
+
 
 
 

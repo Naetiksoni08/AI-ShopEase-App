@@ -27,7 +27,7 @@ module.exports.login = async (req, res) => {
             return loginapi.usererror(res, "Invalid username or password!");
         }
 
-        const token = jwt.sign({ id: user._id, username }, JWT_SECRET, {
+        const token = jwt.sign({ id: user._id,username,role:user.role }, JWT_SECRET, {
             expiresIn: "30d"
         })
 
@@ -39,10 +39,11 @@ module.exports.login = async (req, res) => {
                 user: {
                     _id: user._id,
                     username: user.username,
-                    email: user.email
+                    email: user.email,
+                    role: user.role
                 }
             }
-        })
+        });
 
     } catch (error) {
         return loginapi.error(res, "Internal Server Error", error);
@@ -57,7 +58,7 @@ module.exports.login = async (req, res) => {
 
 module.exports.register = async (req, res) => {
     try {
-        const { username, password, email } = req.body;
+        const { username, password, email,role } = req.body;
 
         if (!username)
             return registerapi.error(res, "Username required", null, 400);
@@ -65,6 +66,10 @@ module.exports.register = async (req, res) => {
             return registerapi.error(res, "Password required", null, 400);
         if (!email)
             return registerapi.error(res, "Email required", null, 400);
+        if (!role)
+            return registerapi.error(res,  "Role required (Buyer or Seller)", null, 400);
+
+
 
 
         const user = await UserModel.findOne({ username });
@@ -78,27 +83,22 @@ module.exports.register = async (req, res) => {
         const newUser = await UserModel.create({
             username,
             email,
-            password: hashedPassword
+            password: hashedPassword,
+            role
         });
 
-        registerapi.success(res, "User created successfully", 200, { user: { username: newUser.username, email: newUser.email, _id: newUser._id } });
+
+        return registerapi.success(res, "User created successfully", 200, {
+            user: {
+                username: newUser.username,
+                email: newUser.email,
+                role: newUser.role,
+                _id: newUser._id
+            }
+        });
+      
     } catch (error) {
         return registerapi.error(res, "Internal Server Error", error);
 
     }
 }
-
-// module.exports.getCurrentUser = async (req, res) => {
-//     try {
-//         const user = await UserModel.findById(req.user.id).select("-password");
-//         if (!user) {
-//             return res.status(404).json({ success: false, message: "User not found" });
-//         }
-//         return res.status(200).json({
-//             success: true,
-//             user,
-//         });
-//     } catch (error) {
-//         return res.status(500).json({ success: false, message: "Server Error", error });
-//     }
-// };

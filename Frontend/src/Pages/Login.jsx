@@ -1,44 +1,30 @@
-import React, { useState ,useContext} from 'react'
-import axios from 'axios'
+import React, { useState } from 'react'
+import { useDispatch, useSelector } from "react-redux";
+import { loginUser} from "../redux/Auth/authSlice";
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { AuthContext } from '../Context/AuthContext';
 
 
-const Login = (props) => {
 
+const Login = () => {
 
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
+    const dispatch = useDispatch();
     const navigate = useNavigate();
 
 
-    const { login } = useContext(AuthContext);
-
+    const { loading } = useSelector((state) => state.auth);
 
     const handleLogin = async (e) => {
         e.preventDefault();
-        try {
-            const res = await axios.post("http://localhost:5001/api/auth/login", {
-                username,
-                password
-            });
-
-
-            const token = res.data.data.token;
-            const LoggedInUsername = res.data.data.user.username;
-
-            // localStorage.setItem('token', token);
-            // localStorage.setItem('username', LoggedInUsername);
-
-            login(LoggedInUsername, token);
-
-            // props.setUsername(LoggedInUsername);
-            toast.success(`Welcome ${LoggedInUsername}!!`);
-            navigate("/")
-
-        } catch (error) {
-            toast.error(error.response?.data?.message || "Login failed. Please try again.");
+        const resultAction = await dispatch(loginUser({ username, password }));
+           
+        if (loginUser.fulfilled.match(resultAction)) {
+            toast.success(`Welcome ${username}!`);
+            navigate("/");
+        } else {
+            toast.error(resultAction.payload || "Login failed. Please try again.");
 
         }
 
@@ -46,8 +32,8 @@ const Login = (props) => {
 
 
     return (
-        <form onSubmit={handleLogin} className="flex justify-center items-start min-h-screen bg-gray-20">
-            <fieldset className="mt-50 mx-auto fieldset bg-gray-800 border-base-300 rounded-box w-xs shadow-xl p-6">
+        <form onSubmit={handleLogin}  className="flex justify-center items-start min-h-screen bg-gray-20">
+            <fieldset className="mt-50 md:m-65 mx-auto fieldset bg-gray-800 border-base-300 rounded-box w-xs shadow-xl p-6">
                 <legend className="fieldset-legend text-xl">Log in</legend>
 
                 <label className="label p-2">Username</label>
