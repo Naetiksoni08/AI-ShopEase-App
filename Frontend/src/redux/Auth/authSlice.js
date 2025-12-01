@@ -1,18 +1,20 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
+const api = import.meta.env.VITE_API_URL;
 
+// LOGIN USER
 export const loginUser = createAsyncThunk("auth/loginUser", async (credentials, thunkAPI) => {
   try {
-    const res = await axios.post("http://localhost:5001/api/auth/login", credentials);
+    const res = await axios.post(`${api}/api/auth/login`, credentials);
 
-    const { token, user  } = res.data.data;
+    const { token, user } = res.data.data;
     // Save to localStorage
     localStorage.setItem("token", token);
     localStorage.setItem("username", user.username);
     localStorage.setItem("role", user.role);
     localStorage.setItem("userId", user._id);
-    return { token, username: user.username , role: user.role, userId: user._id};
+    return { token, username: user.username, role: user.role, userId: user._id };
 
   } catch (error) {
     const msg = error.response?.data?.message || "Login failed";
@@ -23,7 +25,7 @@ export const loginUser = createAsyncThunk("auth/loginUser", async (credentials, 
 
 export const registerUser = createAsyncThunk("auth/registerUser", async (formData, thunkAPI) => {
   try {
-    const res = await axios.post("http://localhost:5001/api/auth/register", formData);
+    const res = await axios.post(`${api}/api/auth/register`, formData);
     return res.data;
   } catch (error) {
     const msg = error.response?.data?.message || "Registration failed";
@@ -63,7 +65,7 @@ const authSlice = createSlice({
         state.token = action.payload.token;
         state.username = action.payload.username;
         state.role = action.payload.role,
-        state.userId = action.payload.userId;
+          state.userId = action.payload.userId;
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;

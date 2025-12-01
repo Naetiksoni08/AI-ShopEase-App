@@ -10,9 +10,11 @@ const OrderHistory = () => {
     fetchOrders();
   }, []);
 
+  const api = import.meta.env.VITE_API_URL;
+
   const fetchOrders = async () => {
     try {
-      const res = await axios.get("http://localhost:5001/api/orders/history", {
+      const res = await axios.get(`${api}/api/orders/history`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },

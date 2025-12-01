@@ -6,7 +6,10 @@ import { useSelector } from "react-redux";
 const Wishlist = () => {
   const [wishlistItems, setWishlistItems] = useState([]);
   const role = useSelector((state) => state.auth.role);
-  
+
+
+  const api = import.meta.env.VITE_API_URL;
+
   useEffect(() => {
     if (role === "buyer") {
       fetchWishlist();
@@ -15,7 +18,7 @@ const Wishlist = () => {
 
   const fetchWishlist = async () => {
     try {
-      const res = await axios.get("http://localhost:5001/api/wishlist", {
+       const res = await axios.get(`${api}/api/wishlist`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       setWishlistItems(res.data.data || []);
@@ -26,7 +29,7 @@ const Wishlist = () => {
 
   const handleRemove = async (id) => {
     try {
-      await axios.delete(`http://localhost:5001/api/wishlist/remove/${id}`, {
+      await axios.delete(`${api}/api/wishlist/remove/${id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       setWishlistItems(prev => prev.filter(item => item._id !== id));

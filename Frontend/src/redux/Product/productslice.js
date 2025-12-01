@@ -2,12 +2,14 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 import { toast } from "react-toastify";
 
+const api = import.meta.env.VITE_API_URL;
+
 // 🧠 Fetch all products
 export const fetchProducts = createAsyncThunk(
   "product/fetchProducts",
   async (_, thunkAPI) => {
     try {
-      const res = await axios.get("http://localhost:5001/api/product", {
+      const res = await axios.get(`${api}/api/product`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       return res.data.data;
@@ -24,7 +26,7 @@ export const fetchProductById = createAsyncThunk(
   "product/fetchProductById",
   async (id, thunkAPI) => {
     try {
-      const res = await axios.get(`http://localhost:5001/api/product/${id}`, {
+      const res = await axios.get(`${api}/api/product/${id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       return res.data.data;
@@ -41,7 +43,7 @@ export const addProduct = createAsyncThunk(
   "product/addProduct",
   async (formData, thunkAPI) => {
     try {
-      const res = await axios.post("http://localhost:5001/api/product", formData, {
+      const res = await axios.post(`${api}/api/product`, formData, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       toast.success("Product added successfully!");
@@ -59,7 +61,7 @@ export const updateProduct = createAsyncThunk(
   "product/updateProduct",
   async ({ id, updatedData }, thunkAPI) => {
     try {
-      const res = await axios.put(`http://localhost:5001/api/product/${id}`, updatedData, {
+      const res = await axios.put(`${api}/api/product/${id}`, updatedData, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       toast.success("Product updated successfully!");
@@ -77,7 +79,7 @@ export const deleteProduct = createAsyncThunk(
   "product/deleteProduct",
   async (id, thunkAPI) => {
     try {
-      await axios.delete(`http://localhost:5001/api/product/${id}`, {
+      await axios.delete(`${api}/api/product/${id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       toast.success("Product deleted successfully!");

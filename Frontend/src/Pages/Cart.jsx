@@ -25,10 +25,12 @@ const Cart = () => {
     navigate("/product");
   };
 
+  const api = import.meta.env.VITE_API_URL;
+
   const handleBuyNow = async (item) => {
     try {
       const { data } = await axios.post(
-        "http://localhost:5001/api/payment/order",
+       `${api}/api/payment/order`,
         { amount: item.price },
         {
           headers: {
@@ -50,9 +52,10 @@ const Cart = () => {
         handler: async function (response) {
           toast.success("Payment Successful!");
 
+
           try {
             await axios.post(
-              "http://localhost:5001/api/payment/verify",
+              `${api}/api/payment/verify`,
               {
                 userId: userId,
                 productId: item._id,

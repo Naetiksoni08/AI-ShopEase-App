@@ -32,10 +32,10 @@ const ShowProducts = () => {
   const role = useSelector((state) => state.auth.role);
 
 
-
+  const api = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
-    axios.get(`http://localhost:5001/api/product/${id}`, {
+    axios.get(`${api}/api/product/${id}`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`
       }
@@ -48,8 +48,6 @@ const ShowProducts = () => {
   useEffect(() => {
     dispatch(fetchReviews(id));
   }, [id, dispatch]);
-
-
 
 
 
@@ -94,7 +92,7 @@ const ShowProducts = () => {
   const deleteProduct = async () => {
     try {
       const { data } = await axios.delete(
-        `http://localhost:5001/api/product/${id}`,
+       `${api}/api/product/${id}`,
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         }
@@ -107,6 +105,7 @@ const ShowProducts = () => {
     }
   };
 
+   // SUMMARIZE REVIEWS USING AI
   const summarizeReviews = async () => {
     try {
       if (!reviews || reviews.length === 0) {
@@ -119,7 +118,7 @@ const ShowProducts = () => {
       const reviewTexts = reviews.map(r => r.text);
 
       const res = await axios.post(
-        "http://localhost:5001/api/ai/summarize",
+        `${api}/api/ai/summarize`,
         {
           reviews: reviewTexts,
           role: role
@@ -141,20 +140,20 @@ const ShowProducts = () => {
   };
 
 
-
   const summarizeReviewsHandler = async () => {
     await summarizeReviews();
     setShowSummaryModal(true);
   };
 
 
-
+  // ADD TO CART
   const CartSubmitHandler = async () => {
     try {
-      const { data } = await axios.post("http://localhost:5001/api/cart/add", { productid: id },
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        });
+      const { data } = await axios.post(
+        `${api}/api/cart/add`,
+        { productid: id },
+        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+      );
 
 
 

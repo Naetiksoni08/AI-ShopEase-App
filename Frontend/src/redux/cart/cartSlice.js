@@ -2,6 +2,8 @@ import axios from "axios";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { toast } from "react-toastify";
 
+
+const api = import.meta.env.VITE_API_URL;
 /* ---------------------------------------------------------
    Fetch Cart Items
 --------------------------------------------------------- */
@@ -9,7 +11,7 @@ export const fetchCart = createAsyncThunk(
   "cart/fetchCart",
   async (_, thunkAPI) => {
     try {
-      const res = await axios.get("http://localhost:5001/api/cart", {
+      const res = await axios.get(`${api}/api/cart`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -31,9 +33,7 @@ export const removeFromCart = createAsyncThunk(
   "cart/removeFromCart",
   async (productId, thunkAPI) => {
     try {
-      const res = await axios.delete(
-        `http://localhost:5001/api/cart/removed/${productId}`,
-        {
+      const res = await axios.delete(`${api}/api/cart/removed/${productId}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -56,29 +56,29 @@ export const removeFromCart = createAsyncThunk(
   }
 );
 
-/* ---------------------------------------------------------
-   Update Cart Quantity
---------------------------------------------------------- */
-export const updateQuantity = createAsyncThunk(
-  "cart/updateQuantity",
-  async ({ productId, quantity }, { rejectWithValue }) => {
-    try {
-      const { data } = await axios.put(
-        `http://localhost:5001/api/cart/update/${productId}`,
-        { quantity },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
+// /* ---------------------------------------------------------
+//    Update Cart Quantity
+// --------------------------------------------------------- */
+// export const updateQuantity = createAsyncThunk(
+//   "cart/updateQuantity",
+//   async ({ productId, quantity }, { rejectWithValue }) => {
+//     try {
+//       const { data } = await axios.put(
+//         `http://localhost:5001/api/cart/update/${productId}`,
+//         { quantity },
+//         {
+//           headers: {
+//             Authorization: `Bearer ${localStorage.getItem("token")}`,
+//           },
+//         }
+//       );
 
-      return data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data || error.message);
-    }
-  }
-);
+//       return data;
+//     } catch (error) {
+//       return rejectWithValue(error.response?.data || error.message);
+//     }
+//   }
+// );
 
 /* ---------------------------------------------------------
    Slice

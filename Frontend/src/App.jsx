@@ -19,18 +19,20 @@ import OrderHistory from './Pages/Orderhistory'
 // import { AuthContext } from './Context/AuthContext'
 
 const App = () => {
+
+  
   // const { user } = useContext(AuthContext);
   const [cartItems, setCartItems] = useState([]);
 
   const { token, username } = useSelector((state) => state.auth);
   const user = token ? { username } : null;
 
-
+  const api = import.meta.env.VITE_API_URL;
 
   const fetchCart = async () => {
     if (!user) return;
     try {
-      const res = await axios.get("http://localhost:5001/api/cart", {
+      const res = await axios.get(`${api}/api/cart`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setCartItems(res.data.data || []);
@@ -40,13 +42,12 @@ const App = () => {
   };
 
   useEffect(() => {
-    if (user) {
+    if (user?.username) {
       fetchCart();
     } else {
       setCartItems([]);
     }
   }, [user?.username]);
-
 
 
   return (

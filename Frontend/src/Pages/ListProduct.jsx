@@ -16,6 +16,8 @@ const ListProduct = () => {
 
   const [wishlist, setWishlist] = useState([]);
 
+  const api = import.meta.env.VITE_API_URL;
+
   useEffect(() => {
     dispatch(fetchProducts());
   }, [dispatch]);
@@ -24,7 +26,7 @@ const ListProduct = () => {
   const fetchWishlist = async () => {
     try {
       if (role !== "buyer") return;
-      const res = await axios.get("http://localhost:5001/api/wishlist", {
+      const res = await axios.get(`${api}/api/wishlist`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       setWishlist(res.data.data.map((item) => item._id)); // store only product IDs
@@ -43,7 +45,7 @@ const ListProduct = () => {
     try {
       if (wishlist.includes(productId)) {
         // remove from wishlist
-        await axios.delete(`http://localhost:5001/api/wishlist/remove/${productId}`, {
+        await axios.delete(`${api}/api/wishlist/remove/${productId}`, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
         setWishlist((prev) => prev.filter((id) => id !== productId));
