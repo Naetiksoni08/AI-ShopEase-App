@@ -5,7 +5,7 @@ const { ReviewschemaValidator } = require("../validations/review/review");
 const validate = require("../middlewares/validate");
 
 
-router.get("/product/:productId/reviews", ReviewController.getReviewsByProduct);  // get reviews
+router.get("/product/:productId/reviews",auth, ReviewController.getReviewsByProduct);  // get reviews
 router.post("/product/:productId/reviews", auth, validate(ReviewschemaValidator), ReviewController.CreateReview);  // create reviews
 router.delete("/product/:productId/reviews/:reviewId", auth, ReviewController.DeleteReview);  // delete reviews
 

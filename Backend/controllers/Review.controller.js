@@ -12,7 +12,9 @@ module.exports.CreateReview = async (req, res) => {
         const { productId } = req.params;
 
         if (!productId) return api.error(res, "Product Id required", 400);
-        const review = await reviewModel.create({ text, rating, user: req.user._id });
+        const review = await reviewModel.create({ text, rating, user: req.user.id });
+
+        // console.log(req.user);
 
         const product = await ProductModel.findById(productId);
         if (!product) return api.error(res, "Product not Found", 404);

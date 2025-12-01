@@ -278,7 +278,7 @@ const ShowProducts = () => {
                 className="p-2 rounded-lg mb-5 bg-gray-900 w-80 shadow-lg text-left"
               >
 
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-gray-400 ml-1">
                   Reviewed by: {rev.user?.username || "Anonymous"}
                 </p>
                 
