@@ -53,7 +53,7 @@ const ListProduct = () => {
       } else {
         // add to wishlist
         await axios.post(
-          "http://localhost:5001/api/wishlist/add",
+          `${api}/api/wishlist/add`,
           { productid: productId },
           { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
         );
