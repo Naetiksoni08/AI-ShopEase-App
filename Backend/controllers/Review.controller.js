@@ -12,7 +12,7 @@ module.exports.CreateReview = async (req, res) => {
         const { productId } = req.params;
 
         if (!productId) return api.error(res, "Product Id required", 400);
-        const review = await reviewModel.create({ text, rating });
+        const review = await reviewModel.create({ text, rating, user: req.user._id });
 
         const product = await ProductModel.findById(productId);
         if (!product) return api.error(res, "Product not Found", 404);
@@ -36,7 +36,14 @@ module.exports.getReviewsByProduct = async (req, res) => {
     try {
         const { productId } = req.params;
 
-        const product = await ProductModel.findById(productId).populate('reviews');
+        const product = await ProductModel.findById(productId)
+        .populate({
+            path: "reviews",
+            populate: {
+                path: "user",
+                select: "username"
+            }
+        });
         if (!product) return api.error(res, "Product not found", 404);
 
         api.success(res, product.reviews, "Reviews fetched successfully");

@@ -92,7 +92,7 @@ const ShowProducts = () => {
   const deleteProduct = async () => {
     try {
       const { data } = await axios.delete(
-       `${api}/api/product/${id}`,
+        `${api}/api/product/${id}`,
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         }
@@ -105,7 +105,7 @@ const ShowProducts = () => {
     }
   };
 
-   // SUMMARIZE REVIEWS USING AI
+  // SUMMARIZE REVIEWS USING AI
   const summarizeReviews = async () => {
     try {
       if (!reviews || reviews.length === 0) {
@@ -277,6 +277,11 @@ const ShowProducts = () => {
                 key={index}
                 className="p-2 rounded-lg mb-5 bg-gray-900 w-80 shadow-lg text-left"
               >
+
+                <p className="text-sm text-gray-400">
+                  Reviewed by: {rev.user?.username || "Anonymous"}
+                </p>
+                
                 <div className="flex items-center gap-2">
                   <ReactStars
                     count={5}
@@ -321,14 +326,14 @@ const ShowProducts = () => {
         {role === "seller" && (
           <>
             <span className='fixed bottom-30 right-1 bg-gray-900 text-white text-sm py-2 px-3 rounded-xl shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-normal  w-56'>
-            Let AI summarize your customer reviews to understand what’s working best for your product.
+              Let AI summarize your customer reviews to understand what’s working best for your product.
             </span>
           </>
         )}
         {role === "buyer" && (
           <>
             <span className='fixed bottom-30 right-1 bg-gray-900 text-white text-sm py-2 px-3 rounded-xl shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-normalm w-56'>
-            Use AI to quickly understand what other customers liked about this product.
+              Use AI to quickly understand what other customers liked about this product.
             </span>
           </>
         )}

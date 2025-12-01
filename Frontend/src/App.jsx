@@ -20,7 +20,17 @@ import OrderHistory from './Pages/Orderhistory'
 
 const App = () => {
 
-  
+  const isMaintenance = import.meta.env.VITE_MAINTENANCE === "true";
+
+  if (isMaintenance) {
+    return (
+      <div className="flex items-center justify-center h-screen text-2xl md:text-3xl font-semibold text-gray-200 bg-gray-900">
+        🚧 We’re updating things. Back Shortly! 🚧
+      </div>
+    );
+  }
+
+
   // const { user } = useContext(AuthContext);
   const [cartItems, setCartItems] = useState([]);
 
@@ -54,22 +64,22 @@ const App = () => {
     <div className="min-h-screen flex flex-col">
       <Navbar cartItems={cartItems} setCartItems={setCartItems} />
       <div className="flex-1">
-      <Routes>
-        {/* public routes */}
-        <Route path='/' element={ <Home /> } />
-        <Route path='/register' element={<Register />} />
-        <Route path='/login' element={<Login />} />
-       
+        <Routes>
+          {/* public routes */}
+          <Route path='/' element={<Home />} />
+          <Route path='/register' element={<Register />} />
+          <Route path='/login' element={<Login />} />
 
-        {/* Protected Routes */}
-    
-        <Route path='/product' element={<ProtectedRoute> <ListProduct /> </ProtectedRoute>} />
-        <Route path='/product/add' element={<ProtectedRoute> <Addproduct /> </ProtectedRoute>} />
-        <Route path="/product/cart" element={<ProtectedRoute> <Cart cartItems={cartItems} setCartItems={setCartItems} fetchCart={fetchCart} /> </ProtectedRoute>} />
-        <Route path='/product/:id/show' element={<ProtectedRoute> <ShowProducts fetchCart={fetchCart} /></ProtectedRoute>} />
-        <Route path='/product/edit/:id' element={<ProtectedRoute> <Editproduct /> </ProtectedRoute>} />
-        <Route path="/orders" element={<ProtectedRoute> <OrderHistory /> </ProtectedRoute>} />
-      </Routes>
+
+          {/* Protected Routes */}
+
+          <Route path='/product' element={<ProtectedRoute> <ListProduct /> </ProtectedRoute>} />
+          <Route path='/product/add' element={<ProtectedRoute> <Addproduct /> </ProtectedRoute>} />
+          <Route path="/product/cart" element={<ProtectedRoute> <Cart cartItems={cartItems} setCartItems={setCartItems} fetchCart={fetchCart} /> </ProtectedRoute>} />
+          <Route path='/product/:id/show' element={<ProtectedRoute> <ShowProducts fetchCart={fetchCart} /></ProtectedRoute>} />
+          <Route path='/product/edit/:id' element={<ProtectedRoute> <Editproduct /> </ProtectedRoute>} />
+          <Route path="/orders" element={<ProtectedRoute> <OrderHistory /> </ProtectedRoute>} />
+        </Routes>
       </div>
 
       <ToastContainer
