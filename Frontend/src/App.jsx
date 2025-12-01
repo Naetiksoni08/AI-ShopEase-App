@@ -24,7 +24,7 @@ const App = () => {
 
   if (isMaintenance) {
     return (
-      <div className="flex items-center justify-center h-screen text-2xl md:text-3xl font-semibold text-gray-200 bg-gray-800">
+      <div className="flex items-center justify-center h-screen text-2xl md:text-3xl font-semibold text-gray-200 bg-dark">
         🚧 We’re updating things. Back Shortly! 🚧
       </div>
     );
