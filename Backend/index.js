@@ -3,7 +3,7 @@ const express = require("express");
 const router = require("./routes/router");
 const cors = require("cors");
 const app = express();
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 5001;
 const connectdb = require("./config/db");
 const { auth: authMiddleware } = require("./middlewares/auth");
 const paymentRoutes = require('./paymentapi/paymentapi');
@@ -21,9 +21,6 @@ app.use("/api", router);
 app.use("/api/payment", paymentRoutes);
 //POST http://localhost:5001/api/payment/order
 
-app.use("/healthcheck", (req, res) => {
-    res.send("hello");
-})
 
 app.use("/", authMiddleware, (req, res) => {
     res.send("working fine");
