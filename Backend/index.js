@@ -21,6 +21,10 @@ app.use("/api", router);
 app.use("/api/payment", paymentRoutes);
 //POST http://localhost:5001/api/payment/order
 
+app.get("/health",(req,res)=>{
+    res.status(200).send("server is running fine");
+})
+
 
 app.use("/", authMiddleware, (req, res) => {
     res.send("working fine");
