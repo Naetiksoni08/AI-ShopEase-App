@@ -29,7 +29,7 @@ const OrderHistory = () => {
 
   return (
     <div className="p-6 flex flex-col items-center min-h-screen bg-gray-300">
-      {role == "buyer" && orders.length>0 &&(
+      {role == "buyer" && orders.length > 0 && (
         <h1 className="text-3xl font-bold mb-8 mt-30  text-gray-900">Shopping Cart</h1>
 
       )}
@@ -42,17 +42,18 @@ const OrderHistory = () => {
             key={order._id}
             className="w-full sm:w-3/4 md:w-2/3 bg-gray-200 p-4 mb-6 rounded-lg shadow-md border"
           >
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-10">
               <img
                 src={order.productId?.Image}
                 alt={order.productId?.name}
-                className="w-32 h-32 object-cover rounded-md border mx-auto sm:mx-0"
+             className="w-3/4 h-auto sm:w-32 sm:h-32 object-cover rounded-md border mx-auto sm:mx-0"
               />
+
 
               <div className="flex flex-col justify-between w-full">
                 <div>
                   <h2 className="text-xl text-gray-950 font-semibold">{order.productId?.name}</h2>
-                  <p className="card-title text-gray-600">₹{order.productId.price.toLocaleString("en-IN")}</p>
+                  <p className="card-title text-gray-600">₹{order.productId?.price?.toLocaleString("en-IN") || "N/A"}</p>
                 </div>
 
                 <div className="text-sm text-gray-500 mt-3">
