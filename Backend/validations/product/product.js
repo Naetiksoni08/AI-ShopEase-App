@@ -11,20 +11,18 @@ const productschemaValidator = joi.object({
         "number.min": "Price cannot be negative",
         "any.required": "Product price is required"
     }),
-
     Image: joi.string().trim().uri().required().messages({
         "string.empty": "Product image is required",
         "string.uri": "Image must be a valid URL",
         "any.required": "Product image is required"
     }),
-
-    description: joi.string().allow("").optional().messages({
-        "string.base": "Description must be text"
+    description: joi.string().allow("").optional(),
+    category: joi.string().valid("Gaming", "Electronics", "Fashion", "Home", "Accessories").required().messages({
+        "any.only": "Category must be one of Gaming, Electronics, Fashion, Home, Accessories",
+        "any.required": "Category is required"
     }),
-    category: joi.string().valid("electronics", "clothes", "shoes", "watches", "other").required(),
-})
+    brand: joi.string().trim().optional(),
+    stock: joi.number().min(0).optional()
+});
 
-
-module.exports = {
-    productschemaValidator
-};
+module.exports = { productschemaValidator };

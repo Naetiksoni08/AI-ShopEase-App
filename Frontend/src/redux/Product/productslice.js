@@ -4,15 +4,17 @@ import { toast } from "react-toastify";
 
 const api = import.meta.env.VITE_API_URL;
 
-// 🧠 Fetch all products
+
+// 🧠 Fetch all products (now with filters + pagination support)
 export const fetchProducts = createAsyncThunk(
   "product/fetchProducts",
-  async (_, thunkAPI) => {
+  async (params = {}, thunkAPI) => {
     try {
       const res = await axios.get(`${api}/api/product`, {
+        params, // { search, category, minPrice, maxPrice, sort, page, limit }
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
-      return res.data.data;
+      return res.data.data; // { products, pagination }
     } catch (error) {
       const msg = error.response?.data?.message || "Failed to fetch products";
       toast.error(msg);
@@ -97,6 +99,7 @@ const productSlice = createSlice({
   name: "product",
   initialState: {
     items: [],
+    pagination: { total: 0, page: 1, limit: 12, totalPages: 1 },
     selectedProduct: null,
     loading: false,
     error: null,
@@ -108,38 +111,28 @@ const productSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch all
       .addCase(fetchProducts.pending, (state) => {
         state.loading = true;
       })
       .addCase(fetchProducts.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = action.payload;
+        state.items = action.payload.products;       // <-- was action.payload
+        state.pagination = action.payload.pagination; // <-- new
       })
       .addCase(fetchProducts.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
-
-      // Fetch single
       .addCase(fetchProductById.fulfilled, (state, action) => {
         state.selectedProduct = action.payload;
       })
-
-      // Add
       .addCase(addProduct.fulfilled, (state, action) => {
         state.items.push(action.payload);
       })
-
-      // Update
       .addCase(updateProduct.fulfilled, (state, action) => {
         const index = state.items.findIndex((p) => p._id === action.payload._id);
-        if (index !== -1) {
-          state.items[index] = action.payload;
-        }
+        if (index !== -1) state.items[index] = action.payload;
       })
-
-      // Delete
       .addCase(deleteProduct.fulfilled, (state, action) => {
         state.items = state.items.filter((p) => p._id !== action.payload);
       });
