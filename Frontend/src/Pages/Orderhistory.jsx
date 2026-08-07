@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import axios from "axios";
+import { toast } from "react-toastify";
 
 const OrderHistory = () => {
   const [orders, setOrders] = useState([]);
@@ -27,52 +28,83 @@ const OrderHistory = () => {
     }
   };
 
+  const handleRemove = async (orderId) => {
+    try {
+      await axios.delete(`${api}/api/orders/${orderId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      setOrders((prev) => prev.filter((o) => o._id !== orderId));
+      toast.success("Removed from order history");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to remove order");
+    }
+  };
+
   return (
-    <div className="p-6 flex flex-col items-center min-h-screen bg-gray-300">
-      {role == "buyer" && orders.length > 0 && (
-        <h1 className="text-3xl font-bold mb-8 mt-30  text-gray-900">Shopping Cart</h1>
+    <div className="min-h-screen bg-gray-900 px-4 pb-16 pt-24">
+      <div className="max-w-3xl mx-auto">
+        {role === "buyer" && orders.length > 0 && (
+          <h1 className="text-3xl font-bold mb-8 text-white">Order History</h1>
+        )}
 
-      )}
+        {!orders || orders.length === 0 ? (
+          <p className="text-lg text-gray-400 text-center mt-20">
+            You haven’t ordered anything yet.
+          </p>
+        ) : (
+          <div className="flex flex-col gap-5">
+            {orders.map((order) => (
+              <div
+                key={order._id}
+                className="bg-gray-800 border border-gray-700 rounded-xl p-4 shadow-md"
+              >
+                <div className="flex flex-col sm:flex-row gap-5">
+                  <img
+                    src={order.productId?.Image}
+                    alt={order.productId?.name}
+                    className="w-full h-40 sm:w-28 sm:h-28 object-cover rounded-lg border border-gray-700 mx-auto sm:mx-0"
+                  />
 
-      {!orders || orders.length === 0 ? (
-        <p className="text-lg text-gray-600 mt-90">You haven’t ordered anything yet.</p>
-      ) : (
-        orders.map((order) => (
-          <div
-            key={order._id}
-            className="w-full sm:w-3/4 md:w-2/3 bg-gray-200 p-4 mb-6 rounded-lg shadow-md border"
-          >
-            <div className="flex flex-col sm:flex-row gap-10">
-              <img
-                src={order.productId?.Image}
-                alt={order.productId?.name}
-             className="w-3/4 h-auto sm:w-32 sm:h-32 object-cover rounded-md border mx-auto sm:mx-0"
-              />
+                  <div className="flex flex-col justify-between w-full">
+                    <div>
+                      <h2 className="text-lg text-white font-semibold">
+                        {order.productId?.name}
+                      </h2>
+                      <p className="text-indigo-400 font-bold mt-1">
+                        ₹{order.productId?.price?.toLocaleString("en-IN") || "N/A"}
+                      </p>
+                    </div>
 
+                    <div className="text-sm text-gray-400 mt-3 space-y-1">
+                      <p>
+                        <span className="text-gray-500">Ordered on:</span>{" "}
+                        {new Date(order.createdAt).toLocaleDateString("en-IN", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </p>
+                      <p>
+                        <span className="text-gray-500">Order ID:</span>{" "}
+                        {order._id.slice(-8).toUpperCase()}
+                      </p>
+                    </div>
 
-              <div className="flex flex-col justify-between w-full">
-                <div>
-                  <h2 className="text-xl text-gray-950 font-semibold">{order.productId?.name}</h2>
-                  <p className="card-title text-gray-600">₹{order.productId?.price?.toLocaleString("en-IN") || "N/A"}</p>
-                </div>
-
-                <div className="text-sm text-gray-500 mt-3">
-                  <p>
-                    <strong>Ordered On:</strong>{" "}
-                    {new Date(order.createdAt).toLocaleString()}
-                  </p>
-                  <p>
-                    <strong>Order ID:</strong> {order.razorpay_order_id}
-                  </p>
-                  <p>
-                    <strong>Payment ID:</strong> {order.razorpay_payment_id}
-                  </p>
+                    <div className="mt-4">
+                      <button
+                        onClick={() => handleRemove(order._id)}
+                        className="text-sm bg-red-900/60 hover:bg-red-900 text-red-200 px-4 py-1.5 rounded-lg transition-colors"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
+            ))}
           </div>
-        ))
-      )}
+        )}
+      </div>
     </div>
   );
 };

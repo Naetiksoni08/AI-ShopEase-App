@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { toast } from 'react-toastify';
 import { Link, useNavigate } from 'react-router-dom'
 import { useDispatch, useSelector } from "react-redux";
 import { logoutUser } from "../redux/Auth/authSlice";
+import { HiMenu, HiX } from "react-icons/hi";
 
 
 const Navbar = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const { token, username, role } = useSelector((state) => state.auth);
   const isLoggedIn = Boolean(token);
@@ -18,6 +20,7 @@ const Navbar = () => {
     dispatch(logoutUser());
     toast.info("You have been logged out!");
     navigate("/login");
+    setMobileOpen(false);
   };
 
   const getInitials = name =>
@@ -34,31 +37,30 @@ const Navbar = () => {
     }
   }
 
+  const closeMobile = () => setMobileOpen(false);
+
   return (
     <>
-      <div className="navbar bg-gray-800 shadow-sm  fixed top-0 left-0 right-0 z-50">
-        <div className="flex-1">
+      <div className="navbar bg-gray-800 shadow-sm fixed top-0 left-0 right-0 z-50 px-4">
+        <div className="flex-1 flex items-center">
           <Link className="btn btn-ghost text-xl" to="/">ShopEase</Link>
 
+          {/* Desktop-only text links */}
           {isLoggedIn && (
-            <>
-
+            <div className="hidden md:flex items-center">
               <Link className="btn btn-ghost text-xl" to="/product">Products</Link>
-
               {role === "seller" && (
                 <Link className="btn btn-ghost text-xl" to="/product/add" onClick={viewproduct}>Add Product</Link>
               )}
-            </>
+            </div>
           )}
         </div>
 
-        {/* Cart */}
         {isLoggedIn && role === "buyer" && (
-          <Link to="/orders" className="text-white px-4">Your Orders</Link>
+          <Link to="/orders" className="hidden md:inline text-white px-4">Your Orders</Link>
         )}
 
-
-        <div className="flex-none">
+        <div className="flex-none flex items-center">
           {isLoggedIn && role === "buyer" && (
             <div className="dropdown dropdown-end">
               <div tabIndex={0} role="button" className="btn btn-ghost btn-circle">
@@ -67,14 +69,10 @@ const Navbar = () => {
                   {cartItems?.length > 0 && (
                     <span className="badge badge-xs indicator-item">{cartItems.length}</span>
                   )}
-
                 </div>
               </div>
 
-
-              <div
-                tabIndex={0}
-                className="card card-compact dropdown-content bg-base-100 z-1 mt-3 w-52 shadow">
+              <div tabIndex={0} className="card card-compact dropdown-content bg-base-100 z-1 mt-3 w-52 shadow">
                 <div className="card-body">
                   <span className="text-lg font-bold">{cartItems?.length || 0} Items</span>
                   <span className="text-info">
@@ -88,12 +86,6 @@ const Navbar = () => {
             </div>
           )}
 
-
-
-
-
-
-          {/* Avatar */}
           <div className="dropdown dropdown-end">
             <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
               <div className="rounded-full">
@@ -111,34 +103,51 @@ const Navbar = () => {
               </div>
             </div>
 
-
-            <ul
-              tabIndex={0}
-              className="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow">
+            <ul tabIndex={0} className="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow">
               {isLoggedIn ? (
                 <>
+                  <li><p className='text-sm'>{username}</p></li>
                   <li>
-                    <p className='text-sm'>{username}</p></li>
-                  <li>
-                    <button
-                      onClick={handleLogout}
-                      className='text-red-500 hover:text-red-600'
-                    >
+                    <button onClick={handleLogout} className='text-red-500 hover:text-red-600'>
                       Logout
                     </button>
                   </li>
                 </>
               ) : (
-                <li>
-                  <Link className='text-red-600' to="/login">Log In</Link>
-                </li>
+                <li><Link className='text-red-600' to="/login">Log In</Link></li>
               )}
             </ul>
           </div>
+
+          {/* Hamburger - mobile only */}
+          <button
+            className="btn btn-ghost btn-circle md:hidden"
+            onClick={() => setMobileOpen((prev) => !prev)}
+          >
+            {mobileOpen ? <HiX className="text-2xl" /> : <HiMenu className="text-2xl" />}
+          </button>
         </div>
       </div>
-    </>
 
+      {/* Mobile dropdown panel */}
+      {mobileOpen && (
+       <div className="md:hidden fixed top-16 left-0 right-0 bg-gray-800 border-t border-gray-700 z-[60] flex flex-col p-3 gap-1">
+          {isLoggedIn ? (
+            <>
+              <Link to="/product" className="btn btn-ghost justify-start" onClick={closeMobile}>Products</Link>
+              {role === "seller" && (
+                <Link to="/product/add" className="btn btn-ghost justify-start" onClick={closeMobile}>Add Product</Link>
+              )}
+              {role === "buyer" && (
+                <Link to="/orders" className="btn btn-ghost justify-start" onClick={closeMobile}>Your Orders</Link>
+              )}
+            </>
+          ) : (
+            <Link to="/login" className="btn btn-ghost justify-start" onClick={closeMobile}>Log In</Link>
+          )}
+        </div>
+      )}
+    </>
   )
 }
 

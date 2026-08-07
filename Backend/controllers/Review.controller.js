@@ -32,6 +32,10 @@ module.exports.CreateReview = async (req, res) => {
             verifiedPurchase: !!verifiedPurchase
         });
 
+        // populate before responding so the frontend gets the username immediately,
+        // instead of showing "Anonymous" until the next full refetch
+        await review.populate("user", "username");
+
         product.reviews.push(review._id);
         await product.save();
 
@@ -46,7 +50,6 @@ module.exports.CreateReview = async (req, res) => {
 module.exports.getReviewsByProduct = async (req, res) => {
     try {
         const { productId } = req.params;
-        // now querying directly on Review, not going through product.reviews populate
         const reviews = await reviewModel.find({ product: productId })
             .populate("user", "username")
             .sort({ createdAt: -1 });

@@ -30,7 +30,7 @@ const Cart = () => {
   const handleBuyNow = async (item) => {
     try {
       const { data } = await axios.post(
-       `${api}/api/payment/order`,
+        `${api}/api/payment/order`,
         { amount: item.price },
         {
           headers: {
@@ -96,68 +96,71 @@ const Cart = () => {
   };
 
   return (
-    <div className="mt-20 md:mt-0 flex justify-center flex-col items-center gap-6 h-auto min-h-screen">
+    <div className="min-h-screen pt-24 md:pt-28 pb-16 px-4 flex flex-col items-center gap-6">
       {!cartItems || cartItems.length === 0 ? (
-        <p className="text-xl font-semibold text-gray-200">
+        <p className="text-xl font-semibold text-gray-200 mt-20 text-center">
           Your cart is empty..
           <br />
           <a
             onClick={cartemptynavigate}
-            className="text-center cursor-pointer underline text-blue-600 hover:text-blue-800"
+            className="text-center cursor-pointer underline text-blue-500 hover:text-blue-400 transition-colors"
           >
-            Shop today’s deals
+            Shop today's deals
           </a>
         </p>
       ) : (
-        cartItems.map((item) => (
-          <div
-            key={item._id}
-            className="flex flex-col sm:flex-row w-11/12 sm:w-4/5 md:w-2/3 bg-dark shadow-xl rounded-lg"
-          >
-            {/* Product Image */}
-            <div className="w-full sm:w-1/3">
-              <img
-                src={
-                  item.Image ||
-                  "https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"
-                }
-                alt={item.name}
-                className="w-full h-40 sm:h-48 md:h-full object-cover rounded-lg"
-              />
-            </div>
+        <div className="w-full max-w-4xl flex flex-col gap-5">
+          <h1 className="text-2xl font-bold text-white mb-2">Your Cart</h1>
 
-            {/* Product Details */}
-            <div className="w-full sm:w-2/3 p-4 flex flex-col justify-between">
-              <div>
-                <h2 className="text-2xl font-bold">{item.name}</h2>
-                <p className="text-gray-600 mt-1">₹{item.price}</p>
-                <p className="text-gray-600 mt-2">{item.description}</p>
+          {cartItems.map((item) => (
+            <div
+              key={item._id}
+              className="flex flex-col sm:flex-row w-full bg-gray-900 border border-gray-800 shadow-lg rounded-xl overflow-hidden transition-all duration-200 hover:shadow-xl hover:border-gray-700"
+            >
+              {/* Product Image */}
+              <div className="w-full sm:w-1/3">
+                <img
+                  src={
+                    item.Image ||
+                    "https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"
+                  }
+                  alt={item.name}
+                  className="w-full h-48 sm:h-full object-cover"
+                />
               </div>
 
-              {/* Action Buttons */}
-              <div className="mt-5 flex flex-col sm:flex-row sm:items-center gap-3">
-                {role === "buyer" && (
-                  <button
-                    onClick={() => handleRemove(item._id)}
-                    className="bg-red-700 text-white px-6 py-2 rounded-md hover:bg-red-600 transition cursor-pointer"
-                  >
-                    Remove
-                  </button>
-                )}
+              {/* Product Details */}
+              <div className="w-full sm:w-2/3 p-5 flex flex-col justify-between">
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-bold text-white">{item.name}</h2>
+                  <p className="text-indigo-400 font-semibold mt-1">₹{item.price.toLocaleString("en-IN")}</p>
+                  <p className="text-gray-400 mt-2 text-sm sm:text-base leading-relaxed">{item.description}</p>
+                </div>
 
-                {role === "buyer" && (
-                  <button
-                    onClick={() => handleBuyNow(item)}
-                    className="btn bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition cursor-pointer"
-                  >
-                    Buy Now
-                  </button>
-                )}
+                {/* Action Buttons */}
+                <div className="mt-5 flex flex-col sm:flex-row sm:items-center gap-3">
+                  {role === "buyer" && (
+                    <button
+                      onClick={() => handleRemove(item._id)}
+                      className="bg-red-900/80 text-white px-6 py-2 rounded-lg hover:bg-red-800 transition-colors cursor-pointer font-medium"
+                    >
+                      Remove
+                    </button>
+                  )}
 
+                  {role === "buyer" && (
+                    <button
+                      onClick={() => handleBuyNow(item)}
+                      className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-500 transition-colors cursor-pointer font-medium shadow-md shadow-indigo-900/30"
+                    >
+                      Buy Now
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))
+          ))}
+        </div>
       )}
     </div>
   );

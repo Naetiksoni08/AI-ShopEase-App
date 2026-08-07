@@ -3,11 +3,15 @@ const api = require("../utils/api");
 
 module.exports.CreateProduct = async (req, res) => {
     try {
+        if (req.user.role !== "seller") {
+            return api.error(res, null, "Only sellers can create products", 403);
+        }
+
         const { name, price, Image, description, category, brand, stock } = req.body;
         const product = await ProductModel.create({
             name, price, Image, description, category,
             brand, stock,
-            seller: req.user.id   // comes from auth middleware — seller is whoever is logged in
+            seller: req.user.id
         });
         api.success(res, product);
     } catch (error) {
@@ -56,7 +60,7 @@ module.exports.GetAllProducts = async (req, res) => {
             if (maxPrice) filter.price.$lte = Number(maxPrice);
         }
 
-        let sortOption = { createdAt: -1 }; // default: newest first
+        let sortOption = { createdAt: -1 };
         if (sort === "price_asc") sortOption = { price: 1 };
         else if (sort === "price_desc") sortOption = { price: -1 };
         else if (sort === "rating") sortOption = { averageRating: -1 };
@@ -91,6 +95,15 @@ module.exports.UpdateProduct = async (req, res) => {
         const { name, price, Image, description, category, brand, stock, isActive } = req.body;
 
         if (!productid) throw new Error("product id Required !!");
+
+        const existingProduct = await ProductModel.findById(productid);
+        if (!existingProduct) {
+            return api.error(res, null, "Product not found", 404);
+        }
+        if (existingProduct.seller.toString() !== req.user.id) {
+            return api.error(res, null, "You are not authorized to update this product", 403);
+        }
+
         const data = {};
 
         if (name) data.name = name;
@@ -116,6 +129,15 @@ module.exports.UpdateProduct = async (req, res) => {
 module.exports.DeleteProduct = async (req, res) => {
     try {
         const productid = req.params.id;
+
+        const existingProduct = await ProductModel.findById(productid);
+        if (!existingProduct) {
+            return api.error(res, null, "Product not found", 404);
+        }
+        if (existingProduct.seller.toString() !== req.user.id) {
+            return api.error(res, null, "You are not authorized to delete this product", 403);
+        }
+
         const deletedProduct = await ProductModel.findByIdAndDelete(productid);
         api.success(res, deletedProduct, "Product deleted successfully!");
     } catch (error) {
