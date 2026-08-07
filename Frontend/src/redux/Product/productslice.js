@@ -23,6 +23,24 @@ export const fetchProducts = createAsyncThunk(
   }
 );
 
+// 🧠 Fetch only the logged-in seller's products
+export const fetchMyProducts = createAsyncThunk(
+  "product/fetchMyProducts",
+  async (params = {}, thunkAPI) => {
+    try {
+      const res = await axios.get(`${api}/api/product/mine`, {
+        params, // { page, limit }
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      return res.data.data; // { products, pagination }
+    } catch (error) {
+      const msg = error.response?.data?.message || "Failed to fetch your products";
+      toast.error(msg);
+      return thunkAPI.rejectWithValue(msg);
+    }
+  }
+);
+
 // 🧠 Fetch a single product
 export const fetchProductById = createAsyncThunk(
   "product/fetchProductById",
@@ -116,10 +134,23 @@ const productSlice = createSlice({
       })
       .addCase(fetchProducts.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = action.payload.products;       // <-- was action.payload
-        state.pagination = action.payload.pagination; // <-- new
+        state.items = action.payload.products;
+        state.pagination = action.payload.pagination;
       })
       .addCase(fetchProducts.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // 🆕 my products — same shape, reuse items/pagination
+      .addCase(fetchMyProducts.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(fetchMyProducts.fulfilled, (state, action) => {
+        state.loading = false;
+        state.items = action.payload.products;
+        state.pagination = action.payload.pagination;
+      })
+      .addCase(fetchMyProducts.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })

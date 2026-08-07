@@ -58,7 +58,7 @@ const Home = () => {
       >
         {/* Layered gradient instead of flat overlay — darker at edges/bottom,
             lighter in the center so the image actually reads through */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/40 to-black/30"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/30"></div>
 
         <div className="relative z-10 text-center max-w-2xl px-4">
           <h1 className="text-5xl font-extrabold mb-4 tracking-wide drop-shadow-lg">
@@ -71,19 +71,19 @@ const Home = () => {
           <div className="flex flex-wrap justify-center gap-4">
             <button
               onClick={handleViewProducts}
-              className="bg-indigo-500 hover:bg-indigo-600 text-white font-medium px-6 py-3 rounded-full shadow-md transition-all"
+              className="bg-indigo-500 hover:bg-indigo-600 text-white font-medium px-6 py-3 rounded-full shadow-md transition-all cursor-pointer"
             >
               View Products
             </button>
 
             <button
               onClick={handleSecondaryCta}
-              className="border border-white hover:bg-white hover:text-black font-medium px-6 py-3 rounded-full transition-all"
+              className="border border-white hover:bg-white hover:text-black font-medium px-6 py-3 rounded-full transition-all cursor-pointer"
             >
               {isLoggedIn
                 ? role === "seller" ? "Add Product" : "Browse Products"
                 : "Login"}{" "}
-              <span className="text-lg font-bold">&gt;&gt;</span>
+              <span className="text-lg font-bold">&gt;</span>
             </button>
           </div>
         </div>
@@ -98,12 +98,15 @@ const Home = () => {
               key={name}
               to={`/product?category=${name}`}
               className="group flex flex-col items-center justify-center gap-3 py-8 px-4 rounded-2xl
-                   bg-gray-800/80 border border-gray-700
-                   hover:bg-gray-800 hover:border-amber-500/60 hover:-translate-y-1
-                   shadow-sm hover:shadow-lg hover:shadow-amber-900/20
-                   transition-all duration-200"
+                bg-gray-800/80 border border-gray-700
+                hover:bg-gray-800 hover:border-indigo-500/50 hover:-translate-y-1 hover:scale-105
+                shadow-sm hover:shadow-lg hover:shadow-indigo-900/30
+                transition-all duration-200"
             >
-              <Icon className="text-3xl text-emerald-500 group-hover:text-emerald-400 transition-colors" />
+              <div className="w-12 h-12 flex items-center justify-center rounded-full
+                bg-indigo-500/10 group-hover:bg-indigo-500/20 transition-colors">
+                <Icon className="text-2xl text-indigo-400 group-hover:text-indigo-300 transition-colors" />
+              </div>
               <span className="text-sm font-medium text-gray-200">{name}</span>
             </Link>
           ))}
@@ -115,24 +118,34 @@ const Home = () => {
         <div className="max-w-6xl mx-auto px-4 pb-16">
           <h2 className="text-2xl font-bold mb-6">Top Rated Products</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            {featured.map((product) => (
-              <div
-                key={product._id}
-                className="card bg-base-100 w-full shadow-sm cursor-pointer"
-                onClick={() => navigate(`/product/${product._id}/show`)}
-              >
-                <figure>
-                  <img
-                    src={product.Image || "https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"}
-                    className="h-40 w-full object-cover"
-                  />
-                </figure>
-                <div className="card-body p-4">
-                  <h3 className="font-semibold text-sm truncate">{product.name}</h3>
-                  <p className="text-indigo-400 font-bold">₹{product.price.toLocaleString("en-IN")}</p>
+            {featured.map((product) => {
+              const outOfStock = product.stock === 0;
+              return (
+                <div
+                  key={product._id}
+                  className="card bg-base-100 w-full shadow-sm cursor-pointer overflow-hidden hover:shadow-lg hover:shadow-indigo-900/20 transition-shadow duration-200"
+                  onClick={() => navigate(`/product/${product._id}/show`)}
+                >
+                  <figure className="relative overflow-hidden">
+                    <img
+                      src={product.Image || "https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"}
+                      className={`h-40 w-full object-cover transition-transform duration-300 hover:scale-110 ${outOfStock ? "grayscale opacity-50" : ""}`}
+                    />
+                    {outOfStock && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                        <span className="bg-gray-900/90 text-gray-200 text-xs font-semibold px-3 py-1 rounded-full border border-gray-700">
+                          Not in Stock
+                        </span>
+                      </div>
+                    )}
+                  </figure>
+                  <div className="card-body p-4">
+                    <h3 className="font-semibold text-sm truncate">{product.name}</h3>
+                    <p className="text-indigo-400 font-bold">₹{product.price.toLocaleString("en-IN")}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

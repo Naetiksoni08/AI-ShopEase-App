@@ -1,7 +1,7 @@
 import axios from "axios";
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchCart, removeFromCart } from "../redux/cart/cartSlice";
+import { fetchCart, removeFromCart, updateQuantity } from "../redux/cart/cartSlice";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
@@ -21,6 +21,11 @@ const Cart = () => {
     Dispatch(removeFromCart(productId));
   };
 
+  const handleQuantityChange = (item, newQuantity) => {
+    if (newQuantity < 1) return;
+    Dispatch(updateQuantity({ productId: item._id, quantity: newQuantity }));
+  };
+
   const cartemptynavigate = () => {
     navigate("/product");
   };
@@ -29,9 +34,11 @@ const Cart = () => {
 
   const handleBuyNow = async (item) => {
     try {
+      const totalAmount = item.price * item.quantity;
+
       const { data } = await axios.post(
         `${api}/api/payment/order`,
-        { amount: item.price },
+        { amount: totalAmount },
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -59,7 +66,8 @@ const Cart = () => {
               {
                 userId: userId,
                 productId: item._id,
-                amount: item.price,
+                amount: totalAmount,
+                quantity: item.quantity,
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
@@ -133,28 +141,59 @@ const Cart = () => {
               <div className="w-full sm:w-2/3 p-5 flex flex-col justify-between">
                 <div>
                   <h2 className="text-xl sm:text-2xl font-bold text-white">{item.name}</h2>
-                  <p className="text-indigo-400 font-semibold mt-1">₹{item.price.toLocaleString("en-IN")}</p>
+                  <p className="text-indigo-400 font-semibold mt-1">
+                    ₹{item.price.toLocaleString("en-IN")}
+                    {item.quantity > 1 && (
+                      <span className="text-gray-400 font-normal text-sm ml-2">
+                        × {item.quantity} = ₹{(item.price * item.quantity).toLocaleString("en-IN")}
+                      </span>
+                    )}
+                  </p>
                   <p className="text-gray-400 mt-2 text-sm sm:text-base leading-relaxed">{item.description}</p>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="mt-5 flex flex-col sm:flex-row sm:items-center gap-3">
-                  {role === "buyer" && (
-                    <button
-                      onClick={() => handleRemove(item._id)}
-                      className="bg-red-900/80 text-white px-6 py-2 rounded-lg hover:bg-red-800 transition-colors cursor-pointer font-medium"
-                    >
-                      Remove
-                    </button>
-                  )}
+                {/* Action Buttons + Quantity Stepper */}
+                <div className="mt-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                    {role === "buyer" && (
+                      <button
+                        onClick={() => handleRemove(item._id)}
+                        className="bg-red-900/80 text-white px-6 py-2 rounded-lg hover:bg-red-800 transition-colors cursor-pointer font-medium"
+                      >
+                        Remove
+                      </button>
+                    )}
 
+                    {role === "buyer" && (
+                      <button
+                        onClick={() => handleBuyNow(item)}
+                        className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-500 transition-colors cursor-pointer font-medium shadow-md shadow-indigo-900/30"
+                      >
+                        Buy Now
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Quantity stepper — bottom-right of the card */}
                   {role === "buyer" && (
-                    <button
-                      onClick={() => handleBuyNow(item)}
-                      className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-500 transition-colors cursor-pointer font-medium shadow-md shadow-indigo-900/30"
-                    >
-                      Buy Now
-                    </button>
+                    <div className="flex items-center gap-3 sm:ml-auto">
+                      <button
+                        onClick={() => handleQuantityChange(item, item.quantity - 1)}
+                        disabled={item.quantity <= 1}
+                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-800 border border-gray-700 text-white hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      >
+                        −
+                      </button>
+                      <span className="w-6 text-center text-white font-medium">
+                        {item.quantity}
+                      </span>
+                      <button
+                        onClick={() => handleQuantityChange(item, item.quantity + 1)}
+                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-800 border border-gray-700 text-white hover:bg-gray-700 transition-colors"
+                      >
+                        +
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>

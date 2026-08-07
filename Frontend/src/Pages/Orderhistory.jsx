@@ -53,55 +53,71 @@ const OrderHistory = () => {
           </p>
         ) : (
           <div className="flex flex-col gap-5">
-            {orders.map((order) => (
-              <div
-                key={order._id}
-                className="bg-gray-800 border border-gray-700 rounded-xl p-4 shadow-md"
-              >
-                <div className="flex flex-col sm:flex-row gap-5">
-                  <img
-                    src={order.productId?.Image}
-                    alt={order.productId?.name}
-                    className="w-full h-40 sm:w-28 sm:h-28 object-cover rounded-lg border border-gray-700 mx-auto sm:mx-0"
-                  />
+            {orders.map((order) => {
+              const quantity = order.quantity || 1;
+              const unitPrice = order.productId?.price;
 
-                  <div className="flex flex-col justify-between w-full">
-                    <div>
-                      <h2 className="text-lg text-white font-semibold">
-                        {order.productId?.name}
-                      </h2>
-                      <p className="text-indigo-400 font-bold mt-1">
-                        ₹{order.productId?.price?.toLocaleString("en-IN") || "N/A"}
-                      </p>
-                    </div>
+              return (
+                <div
+                  key={order._id}
+                  className="bg-gray-800 border border-gray-700 rounded-xl p-4 shadow-md"
+                >
+                  <div className="flex flex-col sm:flex-row gap-5">
+                    <img
+                      src={order.productId?.Image}
+                      alt={order.productId?.name}
+                      className="w-full h-64 sm:w-48 sm:h-48 object-cover rounded-lg border border-gray-700 mx-auto sm:mx-0 flex-shrink-0"
+                    />
 
-                    <div className="text-sm text-gray-400 mt-3 space-y-1">
-                      <p>
-                        <span className="text-gray-500">Ordered on:</span>{" "}
-                        {new Date(order.createdAt).toLocaleDateString("en-IN", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </p>
-                      <p>
-                        <span className="text-gray-500">Order ID:</span>{" "}
-                        {order._id.slice(-8).toUpperCase()}
-                      </p>
-                    </div>
+                    <div className="flex flex-col justify-between w-full">
+                      <div>
+                        <h2 className="text-lg text-white font-semibold">
+                          {order.productId?.name}
+                        </h2>
 
-                    <div className="mt-4">
-                      <button
-                        onClick={() => handleRemove(order._id)}
-                        className="text-sm bg-red-900/60 hover:bg-red-900 text-red-200 px-4 py-1.5 rounded-lg transition-colors"
-                      >
-                        Remove
-                      </button>
+                        <div className="mt-1 flex flex-wrap items-baseline gap-x-2">
+                          <p className="text-indigo-400 font-bold text-lg">
+                            ₹{order.amount?.toLocaleString("en-IN") || "N/A"}
+                          </p>
+                          {quantity > 1 && unitPrice && (
+                            <p className="text-gray-500 text-sm">
+                              (₹{unitPrice.toLocaleString("en-IN")} × {quantity})
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="text-sm text-gray-400 mt-3 space-y-1">
+                        <p>
+                          <span className="text-gray-500">Ordered on:</span>{" "}
+                          {new Date(order.createdAt).toLocaleDateString("en-IN", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </p>
+                        <p>
+                          <span className="text-gray-500">Quantity:</span> {quantity}
+                        </p>
+                        <p>
+                          <span className="text-gray-500">Order ID:</span>{" "}
+                          {order._id.slice(-8).toUpperCase()}
+                        </p>
+                      </div>
+
+                      <div className="mt-4">
+                        <button
+                          onClick={() => handleRemove(order._id)}
+                          className="text-sm bg-red-900/60 hover:bg-red-900 text-red-200 px-4 py-1.5 rounded-lg transition-colors cursor-pointer"
+                        >
+                          Remove
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

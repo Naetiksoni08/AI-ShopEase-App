@@ -29,13 +29,14 @@ const parseSummary = (text) => {
     });
 };
 
-// Color-codes each section based on what it's actually saying
+const cleanHeading = (heading) => heading.replace(/^[^\w]+/, "").trim();
+
 const getSectionStyle = (heading) => {
-  if (/should not/i.test(heading)) return { color: "text-red-400", border: "border-red-500/30", bg: "bg-red-500/5" };
-  if (/should buy/i.test(heading)) return { color: "text-emerald-400", border: "border-emerald-500/30", bg: "bg-emerald-500/5" };
-  if (/issue/i.test(heading)) return { color: "text-amber-400", border: "border-amber-500/30", bg: "bg-amber-500/5" };
-  if (/verdict/i.test(heading)) return { color: "text-indigo-400", border: "border-indigo-500/30", bg: "bg-indigo-500/5" };
-  return { color: "text-gray-300", border: "border-gray-700", bg: "bg-gray-800/40" };
+  if (/should not/i.test(heading)) return { accent: "border-l-red-500" };
+  if (/should buy/i.test(heading)) return { accent: "border-l-emerald-500" };
+  if (/issue/i.test(heading)) return { accent: "border-l-amber-500" };
+  if (/verdict/i.test(heading)) return { accent: "border-l-indigo-500" };
+  return { accent: "border-l-gray-600" };
 };
 
 
@@ -55,6 +56,10 @@ const ShowProducts = () => {
 
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const [showStockModal, setShowStockModal] = useState(false);
+  const [newStock, setNewStock] = useState(1);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const { reviews } = useSelector((state) => state.review);
   const role = useSelector((state) => state.auth.role);
@@ -78,8 +83,6 @@ const ShowProducts = () => {
   useEffect(() => {
     dispatch(fetchReviews(id));
   }, [id, dispatch]);
-
-
 
 
   const submitReview = async () => {
@@ -117,8 +120,6 @@ const ShowProducts = () => {
   };
 
 
-
-
   const deleteProduct = async () => {
     try {
       const { data } = await axios.delete(
@@ -132,15 +133,18 @@ const ShowProducts = () => {
       navigate("/product");
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to delete product!");
+    } finally {
+      setShowDeleteModal(false);
     }
   };
+
 
   // SUMMARIZE REVIEWS USING AI
   const summarizeReviews = async () => {
     try {
       if (!reviews || reviews.length === 0) {
         toast.warning("No reviews to summarize!");
-        return;
+        return false;
       }
 
       setLoading(true);
@@ -162,8 +166,10 @@ const ShowProducts = () => {
       );
 
       setSummary(res.data.summary);
+      return true;
     } catch (err) {
       toast.error("AI failed to summarize");
+      return false;
     } finally {
       setLoading(false);
     }
@@ -171,21 +177,25 @@ const ShowProducts = () => {
 
 
   const summarizeReviewsHandler = async () => {
-    await summarizeReviews();
-    setShowSummaryModal(true);
+    const success = await summarizeReviews();
+    if (success) {
+      setShowSummaryModal(true);
+    }
   };
-
 
   // ADD TO CART
   const CartSubmitHandler = async () => {
+    if (product.stock === 0) {
+      toast.error("This product is currently out of stock");
+      return;
+    }
+
     try {
       const { data } = await axios.post(
         `${api}/api/cart/add`,
         { productid: id },
         { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
       );
-
-
 
       if (data?.success == true) {
         toast.success(data.message || "Product Added To Cart");
@@ -196,31 +206,64 @@ const ShowProducts = () => {
       const msg = error.response?.data?.message || "Failed to add to cart";
       toast.warn(msg);
       return;
-
-
     }
   }
+
+  const updateStockHandler = async () => {
+    if (newStock <= 0) {
+      toast.error("Stock must be at least 1");
+      return;
+    }
+    if (newStock > 20) {
+      toast.error("Stock cannot be more than 20");
+      return;
+    }
+
+    try {
+      const { data } = await axios.put(
+        `${api}/api/product/${id}`,
+        { stock: newStock },
+        { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+      );
+      SetProduct(data.data);
+      toast.success("Product is back in stock!");
+      setShowStockModal(false);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to update stock");
+    }
+  };
 
   if (!product) {
     return <p className='text-center mt-50 text-2xl text-gray-500'>Loading product....</p>
   }
 
+  const anyModalOpen = showSummaryModal || showStockModal || showDeleteModal;
+
   return (
     <div className="flex flex-col lg:flex-row justify-between items-start gap-10 lg:gap-24 max-w-7xl mx-auto px-4 sm:px-8 lg:px-16 mt-16 md:mt-24 pb-24">
 
       {/* LEFT PART (card + buttons together) */}
-      <div className="w-full lg:max-w-md flex flex-col mx-auto">
+      <div className="w-full lg:max-w-md flex flex-col mx-auto shadow-2xl transition-all duration-200 hover:scale-105 hover:shadow-lg">
 
         {/* Product Card */}
-        <div className="card bg-base-100 shadow-xl">
-          <img
-            className="w-full max-w-xl mx-auto rounded-lg object-cover p-5"
-            src={
-              product.Image ||
-              "https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"
-            }
-            alt={product.name}
-          />
+        <div className="card bg-base-100 shadow-xl ">
+          <div className="relative w-full max-w-xl mx-auto p-5 ">
+            <img
+              className={`w-full rounded-lg object-cover ${product.stock === 0 ? "grayscale opacity-50" : ""}`}
+              src={
+                product.Image ||
+                "https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"
+              }
+              alt={product.name}
+            />
+            {product.stock === 0 && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="bg-gray-900/90 text-gray-200 text-base font-semibold px-5 py-2 rounded-full border border-gray-700">
+                  Not in Stock
+                </span>
+              </div>
+            )}
+          </div>
 
           <div className="card-body p-6 space-y-3">
             <h2 className="card-title">{product.name}</h2>
@@ -228,7 +271,6 @@ const ShowProducts = () => {
             <p>{product.description}</p>
           </div>
         </div>
-
 
         {/* BUTTONS */}
         <div className="card-actions justify-start flex-wrap gap-3 mt-5">
@@ -242,17 +284,17 @@ const ShowProducts = () => {
 
           {role === "seller" && isOwner && (
             <>
-
-              <button
-                className="btn btn-accent"
-                onClick={() => navigate(`/product/edit/${id}`)}
-              >
+              <button className="btn btn-accent" onClick={() => navigate(`/product/edit/${id}`)}>
                 Edit
               </button>
-
-              <button className="btn btn-warning" onClick={deleteProduct}>
+              <button className="btn btn-warning" onClick={() => setShowDeleteModal(true)}>
                 Delete
               </button>
+              {product.stock === 0 && (
+                <button className="btn btn-success" onClick={() => setShowStockModal(true)}>
+                  Back in Stock
+                </button>
+              )}
             </>
           )}
 
@@ -357,33 +399,33 @@ const ShowProducts = () => {
 
       <div className="relative group">
 
-        <p
-          onClick={summarizeReviewsHandler}
-          className='fixed bottom-6 right-6 sm:bottom-10 sm:right-9 bg-gray-800 text-white p-4 sm:p-5 rounded-full shadow-lg hover:bg-gray-700 cursor-pointer transition-all duration-200 text-2xl z-50'>
-          <LuMessageSquareText /></p>
-        {/*  tooltip */}
-        {role === "seller" && (
+        {!anyModalOpen && (
           <>
-            <span className='fixed bottom-24 right-4 sm:bottom-30 sm:right-1 bg-gray-900 text-white text-sm py-2 px-3 rounded-xl shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-normal w-56 hidden sm:block'>
-              Let AI summarize your customer reviews to understand what's working best for your product.
-            </span>
+            <p
+              onClick={summarizeReviewsHandler}
+              className='fixed bottom-6 right-6 sm:bottom-10 sm:right-9 bg-gray-800 text-white p-4 sm:p-5 rounded-full shadow-lg hover:bg-gray-700 cursor-pointer transition-all duration-200 text-2xl z-50'>
+              <LuMessageSquareText /></p>
+            {/*  tooltip */}
+            {role === "seller" && (
+              <span className='fixed bottom-24 right-4 sm:bottom-30 sm:right-1 bg-gray-900 text-white text-sm py-2 px-3 rounded-xl shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-normal w-56 hidden sm:block'>
+                Let AI summarize your customer reviews to understand what's working best for your product.
+              </span>
+            )}
+            {role === "buyer" && (
+              <span className='fixed bottom-24 right-4 sm:bottom-30 sm:right-1 bg-gray-900 text-white text-sm py-2 px-3 rounded-xl shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-normal w-56 hidden sm:block'>
+                Use AI to quickly understand what other customers liked about this product.
+              </span>
+            )}
+            {loading && (
+              <p className="text-gray-400 text-center fixed bottom-24 right-4 sm:bottom-3 sm:right-1 z-50">
+                AI is thinking… ✨
+              </p>
+            )}
           </>
-        )}
-        {role === "buyer" && (
-          <>
-            <span className='fixed bottom-24 right-4 sm:bottom-30 sm:right-1 bg-gray-900 text-white text-sm py-2 px-3 rounded-xl shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-normal w-56 hidden sm:block'>
-              Use AI to quickly understand what other customers liked about this product.
-            </span>
-          </>
-        )}
-        {loading && (
-          <p className="text-gray-400 text-center fixed bottom-24 right-4 sm:bottom-3 sm:right-1 z-50">
-            AI is thinking… ✨
-          </p>
         )}
 
         {showSummaryModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 px-4">
             <div className="bg-gray-900 rounded-2xl shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col">
 
               <div className="flex items-center justify-between px-6 py-5 border-b border-gray-800">
@@ -391,19 +433,19 @@ const ShowProducts = () => {
                 <button
                   onClick={() => setShowSummaryModal(false)}
                   aria-label="Close"
-                  className="text-gray-400 hover:text-white text-2xl leading-none transition-colors"
+                  className="text-gray-400 hover:text-white text-2xl leading-none transition-colors cursor-pointer"
                 >
                   &times;
                 </button>
               </div>
 
-              <div className="px-6 py-5 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] space-y-4">
+              <div className="px-6 py-5 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] space-y-3">
                 {parseSummary(summary).map((section, i) => {
                   const style = getSectionStyle(section.heading);
                   return (
-                    <div key={i} className={`rounded-xl border p-4 ${style.border} ${style.bg}`}>
-                      <h3 className={`font-semibold mb-2 ${style.color}`}>{section.heading}</h3>
-                      <p className="text-gray-300 text-sm leading-relaxed whitespace-pre-line">{section.body}</p>
+                    <div key={i} className={`bg-gray-800/40 border-l-4 ${style.accent} rounded-md p-4`}>
+                      <h3 className="font-semibold mb-1.5 text-gray-100 text-sm">{cleanHeading(section.heading)}</h3>
+                      <p className="text-gray-400 text-sm leading-relaxed whitespace-pre-line">{section.body}</p>
                     </div>
                   );
                 })}
@@ -412,10 +454,55 @@ const ShowProducts = () => {
             </div>
           </div>
         )}
+
+        {showStockModal && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+            <div className="bg-gray-900 rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4">
+              <h3 className="text-lg font-bold text-white">Restock Product</h3>
+              <input
+                type="number"
+                min={1}
+                max={20}
+                value={newStock}
+                onChange={(e) => setNewStock(Number(e.target.value))}
+                className="input input-bordered w-full"
+              />
+              <p className="text-xs text-gray-500">Max 20 units per product.</p>
+              <div className="flex gap-3 justify-end">
+                <button className="btn btn-ghost btn-sm" onClick={() => setShowStockModal(false)}>
+                  Cancel
+                </button>
+                <button className="btn btn-primary btn-sm" onClick={updateStockHandler}>
+                  Set Stock
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showDeleteModal && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[60] px-4">
+            <div className="bg-gray-900 rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4 border border-gray-800">
+              <h3 className="text-lg font-bold text-white">Delete Product?</h3>
+              <p className="text-sm text-gray-400">
+                Are you sure you want to delete this product?
+              </p>
+              <div className="flex gap-3 justify-end pt-2">
+                <button className="btn btn-ghost btn-sm" onClick={() => setShowDeleteModal(false)}>
+                  No
+                </button>
+                <button
+                  className="btn btn-sm bg-red-600 hover:bg-red-700 text-white border-none"
+                  onClick={deleteProduct}
+                >
+                  Yes
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
-
-
   );
 }
 

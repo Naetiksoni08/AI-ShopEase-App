@@ -44,7 +44,7 @@ router.post("/order", auth, async (req, res) => {
 router.post("/verify", auth, async (req, res) => {
     try {
 
-        const { productId, razorpay_order_id, razorpay_payment_id, razorpay_signature, amount } = req.body;
+        const { productId, razorpay_order_id, razorpay_payment_id, razorpay_signature, amount, quantity } = req.body;
 
         const signature = razorpay_order_id + "|" + razorpay_payment_id;
 
@@ -58,16 +58,21 @@ router.post("/verify", auth, async (req, res) => {
 
 
         const userId = req.user.id;
-        
+
         const user = await UserModel.findById(userId);
         if (!user) return api.error(res, null, "User not found", 404);
 
-        user.cart = user.cart.filter(id => id.toString() !== productId);
+        // cart items are now { product, quantity } subdocuments, not raw ObjectIds,
+        // so compare against item.product instead of the item itself
+        user.cart = user.cart.filter(
+            (item) => item.product.toString() !== productId
+        );
         await user.save();
 
         await OrderModel.create({
-            userId:userId,
+            userId: userId,
             productId,
+            quantity: quantity || 1,
             amount,
             razorpay_order_id,
             razorpay_payment_id,

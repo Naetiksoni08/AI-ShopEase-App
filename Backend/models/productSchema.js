@@ -38,6 +38,7 @@ const productSchema = new mongoose.Schema({
     stock: {
         type: Number,
         min: 0,
+        max: [20, "Stock cannot be more than 20"],
         default: 0
     },
     seller: {

@@ -7,7 +7,9 @@ const productUpdateValidator = joi.object({
     description: joi.string().allow(""),
     category: joi.string().valid("Gaming", "Electronics", "Fashion", "Home", "Accessories"),
     brand: joi.string().trim(),
-    stock: joi.number().min(0),
+    stock: joi.number().min(0).max(20).messages({
+        "number.max": "Stock cannot be more than 20"
+    }),
     isActive: joi.boolean()
 }).min(1);
 

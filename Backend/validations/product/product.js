@@ -22,7 +22,9 @@ const productschemaValidator = joi.object({
         "any.required": "Category is required"
     }),
     brand: joi.string().trim().optional(),
-    stock: joi.number().min(0).optional()
+    stock: joi.number().min(0).max(20).optional().messages({
+        "number.max": "Stock cannot be more than 20"
+    }),
 });
 
 module.exports = { productschemaValidator };

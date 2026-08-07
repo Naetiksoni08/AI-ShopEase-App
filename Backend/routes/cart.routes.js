@@ -6,6 +6,7 @@ const CartController = require("../controllers/cart.controller");
 
 router.get("/", CartController.GetCart);
 router.post("/add", CartController.AddtoCart);
+router.put("/update/:id", CartController.UpdateCartQuantity);
 router.delete("/removed/:id", CartController.RemoveCart);
 
 

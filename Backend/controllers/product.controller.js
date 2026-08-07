@@ -144,3 +144,36 @@ module.exports.DeleteProduct = async (req, res) => {
         api.error(res, error, "Failed to delete product");
     }
 }
+
+module.exports.GetMyProducts = async (req, res) => {
+    try {
+        if (req.user.role !== "seller") {
+            return api.error(res, null, "Only sellers can view their products", 403);
+        }
+
+        const { page = 1, limit = 12 } = req.query;
+        const pageNum = Math.max(1, Number(page));
+        const limitNum = Math.max(1, Number(limit));
+        const skip = (pageNum - 1) * limitNum;
+
+        const filter = { seller: req.user.id };
+
+        const [products, total] = await Promise.all([
+            ProductModel.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limitNum),
+            ProductModel.countDocuments(filter)
+        ]);
+
+        api.success(res, {
+            products,
+            pagination: {
+                total,
+                page: pageNum,
+                limit: limitNum,
+                totalPages: Math.ceil(total / limitNum)
+            }
+        }, "Your products fetched successfully!");
+    } catch (error) {
+        api.error(res, error, "Failed to fetch your products");
+    }
+}
+

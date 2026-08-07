@@ -6,11 +6,10 @@ const { productschemaValidator } = require("../validations/product/product");
 const { productUpdateValidator } = require("../validations/product/updateproduct");
 
 router.get("/", ProductController.GetAllProducts); //bulk get products
+router.get("/mine", authMiddleware, ProductController.GetMyProducts); // seller's own products — MUST stay above /:id
 router.get("/:id", ProductController.getProductById); // show specific product
 router.post("/", authMiddleware, validate(productschemaValidator), ProductController.CreateProduct); // create a product
 router.put("/:id", authMiddleware, validate(productUpdateValidator), ProductController.UpdateProduct); // update a product
 router.delete("/:id", authMiddleware, ProductController.DeleteProduct); // delete a products 
 
-
 module.exports = router;
-

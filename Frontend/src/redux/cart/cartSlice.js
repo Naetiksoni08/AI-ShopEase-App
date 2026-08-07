@@ -42,7 +42,7 @@ export const removeFromCart = createAsyncThunk(
 
       if (res.data && res.data.success) {
         toast.success("Removed from cart");
-        return productId; // return ID so state can remove it
+        return productId;
       } else {
         return thunkAPI.rejectWithValue(
           res.data?.message || "Failed to remove"
@@ -56,29 +56,31 @@ export const removeFromCart = createAsyncThunk(
   }
 );
 
-// /* ---------------------------------------------------------
-//    Update Cart Quantity
-// --------------------------------------------------------- */
-// export const updateQuantity = createAsyncThunk(
-//   "cart/updateQuantity",
-//   async ({ productId, quantity }, { rejectWithValue }) => {
-//     try {
-//       const { data } = await axios.put(
-//         `http://localhost:5001/api/cart/update/${productId}`,
-//         { quantity },
-//         {
-//           headers: {
-//             Authorization: `Bearer ${localStorage.getItem("token")}`,
-//           },
-//         }
-//       );
+/* ---------------------------------------------------------
+   Update Cart Quantity
+--------------------------------------------------------- */
+export const updateQuantity = createAsyncThunk(
+  "cart/updateQuantity",
+  async ({ productId, quantity }, thunkAPI) => {
+    try {
+      const res = await axios.put(
+        `${api}/api/cart/update/${productId}`,
+        { quantity },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
 
-//       return data;
-//     } catch (error) {
-//       return rejectWithValue(error.response?.data || error.message);
-//     }
-//   }
-// );
+      return { productId, quantity: res.data.data.quantity };
+    } catch (error) {
+      return thunkAPI.rejectWithValue(
+        error.response?.data?.message || "Failed to update quantity"
+      );
+    }
+  }
+);
 
 /* ---------------------------------------------------------
    Slice
@@ -119,6 +121,15 @@ const cartSlice = createSlice({
         );
       })
       .addCase(removeFromCart.rejected, (state, action) => {
+        toast.error(action.payload);
+      })
+
+      /* ------------ updateQuantity ------------ */
+      .addCase(updateQuantity.fulfilled, (state, action) => {
+        const item = state.items.find((i) => i._id === action.payload.productId);
+        if (item) item.quantity = action.payload.quantity;
+      })
+      .addCase(updateQuantity.rejected, (state, action) => {
         toast.error(action.payload);
       })
 
