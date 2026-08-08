@@ -1,0 +1,38 @@
+# -----------------------------------------------------------------------
+# docker-compose.yml — runs backend + frontend together for LOCAL testing
+# -----------------------------------------------------------------------
+# Place this file at your project ROOT (one level above Backend/ and
+# Frontend/ folders), so the `context` paths below resolve correctly.
+#
+# Run with:   docker compose up --build
+# Stop with:  docker compose down
+# -----------------------------------------------------------------------
+
+services:
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile.backend
+    container_name: shopease-backend
+    ports:
+      - "5001:5001"
+    env_file:
+      - ./Backend/.env
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile.frontend
+      args:
+        # Browser-side calls hit this URL directly (not the internal
+        # Docker network), so it must be an address your browser can
+        # actually reach — localhost works because we're publishing
+        # the backend's port to the host above.
+        VITE_API_URL: http://localhost:5001
+    container_name: shopease-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped

@@ -1,0 +1,41 @@
+# -----------------------------------------------------------------------
+# Backend Dockerfile — Node/Express API
+# -----------------------------------------------------------------------
+# What each line does (read this once, then you'll get Dockerfiles forever):
+#
+# FROM        -> starting point image (a pre-built OS + Node already installed)
+# WORKDIR     -> sets the working directory inside the container (like `cd`)
+# COPY        -> copies files from your machine into the container
+# RUN         -> executes a command DURING the image build (e.g. npm install)
+# EXPOSE      -> documents which port the app listens on (doesn't actually
+#                publish it — that happens with `docker run -p` or compose)
+# CMD         -> the command that runs when the container STARTS
+# -----------------------------------------------------------------------
+
+# Use a slim, official Node image — "alpine" = minimal Linux, smaller image size
+FROM node:20-alpine
+
+# All subsequent commands run from /app inside the container
+WORKDIR /app
+
+# Copy ONLY package files first (not the whole codebase yet).
+# Why: Docker caches layers. If package.json hasn't changed, Docker reuses
+# the cached "npm install" layer instead of reinstalling on every build —
+# this makes rebuilds dramatically faster during development.
+COPY package*.json ./
+
+# Install dependencies. --omit=dev skips devDependencies (like nodemon) —
+# we don't need those in a production image.
+RUN npm install --omit=dev
+
+# NOW copy the rest of your backend source code
+COPY . .
+
+# Document that this container listens on port 5001
+# (must match the PORT your index.js / .env actually uses)
+EXPOSE 5001
+
+# Start the server. We use plain "node", NOT "nodemon" — nodemon is a dev
+# tool that watches for file changes and restarts; inside a container,
+# nothing is going to edit your files live, so it's unnecessary overhead.
+CMD ["node", "index.js"]
