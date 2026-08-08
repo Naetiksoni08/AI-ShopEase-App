@@ -53,8 +53,7 @@ const ListProduct = () => {
     fetchWishlist();
   }, []);
 
-  const toggleWishlist = async (e, productId) => {
-    e.stopPropagation(); // don't let the card's own click handlers steal this
+  const toggleWishlist = async (productId) => {
     try {
       if (wishlist.includes(productId)) {
         await axios.delete(`${api}/api/wishlist/remove/${productId}`, {
@@ -75,7 +74,7 @@ const ListProduct = () => {
       toast.error(error.response?.data?.message || "Wishlist update failed");
     }
   };
-
+  
   const goToPage = (page) => {
     const params = Object.fromEntries(searchParams.entries());
     setSearchParams({ ...params, page });

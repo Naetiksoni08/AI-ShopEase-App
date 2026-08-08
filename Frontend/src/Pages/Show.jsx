@@ -1,11 +1,12 @@
 import axios from 'axios';
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify';
 import ReactStars from "react-rating-stars-component";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchReviews, addReview, removeReview, } from "../redux/Review/reviewslice"
 import { LuMessageSquareText } from "react-icons/lu";
+import { FaAngleDown } from "react-icons/fa";   // ← icon import
 import dayjs from 'dayjs';
 import relativeTime from "dayjs/plugin/relativeTime";
 dayjs.extend(relativeTime);
@@ -31,13 +32,16 @@ const parseSummary = (text) => {
 
 const cleanHeading = (heading) => heading.replace(/^[^\w]+/, "").trim();
 
-const getSectionStyle = (heading) => {
-  if (/should not/i.test(heading)) return { accent: "border-l-red-500" };
-  if (/should buy/i.test(heading)) return { accent: "border-l-emerald-500" };
-  if (/issue/i.test(heading)) return { accent: "border-l-amber-500" };
-  if (/verdict/i.test(heading)) return { accent: "border-l-indigo-500" };
-  return { accent: "border-l-gray-600" };
-};
+const SECTION_COLORS = [
+  "border-l-emerald-500",
+  "border-l-amber-500",
+  "border-l-indigo-500",
+  "border-l-pink-500",
+];
+
+const getSectionStyle = (index) => ({
+  accent: SECTION_COLORS[index % SECTION_COLORS.length],
+});
 
 
 const ShowProducts = () => {
@@ -45,6 +49,7 @@ const ShowProducts = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const reviewsContainerRef = useRef(null);
 
   //states
   const [product, SetProduct] = useState(null);
@@ -69,6 +74,13 @@ const ShowProducts = () => {
 
 
   const api = import.meta.env.VITE_API_URL;
+
+  const scrollReviewsToBottom = () => {
+    reviewsContainerRef.current?.scrollTo({
+      top: reviewsContainerRef.current.scrollHeight,
+      behavior: "smooth",
+    });
+  };
 
   useEffect(() => {
     axios.get(`${api}/api/product/${id}`, {
@@ -243,10 +255,10 @@ const ShowProducts = () => {
     <div className="flex flex-col lg:flex-row justify-between items-start gap-10 lg:gap-24 max-w-7xl mx-auto px-4 sm:px-8 lg:px-16 mt-16 md:mt-24 pb-24">
 
       {/* LEFT PART (card + buttons together) */}
-      <div className="w-full lg:max-w-md flex flex-col mx-auto shadow-2xl transition-all duration-200 hover:scale-105 hover:shadow-lg">
+      <div className="w-full lg:max-w-md flex flex-col mx-auto shadow-lg transition-all duration-200 hover:scale-105 hover:shadow-lg">
 
         {/* Product Card */}
-        <div className="card bg-base-100 shadow-xl ">
+        <div className="card bg-base-100">
           <div className="relative w-full max-w-xl mx-auto p-5 ">
             <img
               className={`w-full rounded-lg object-cover ${product.stock === 0 ? "grayscale opacity-50" : ""}`}
@@ -291,7 +303,10 @@ const ShowProducts = () => {
                 Delete
               </button>
               {product.stock === 0 && (
-                <button className="btn btn-success" onClick={() => setShowStockModal(true)}>
+                <button
+                  className="btn btn-error text-black border-none"
+                  onClick={() => setShowStockModal(true)}
+                >
                   Back in Stock
                 </button>
               )}
@@ -344,8 +359,20 @@ const ShowProducts = () => {
           </>
         )}
 
-        <h2 className="text-xl semi-bold mt-10 mb-3">Customer Reviews</h2>
-        <div className="max-h-[400px] overflow-y-auto w-full max-w-md flex flex-col items-center">
+        <div className="flex items-center justify-between w-full max-w-md mt-10 mb-3">
+          <h2 className="text-xl semi-bold">Customer Reviews</h2>
+
+          {reviews.length > 2 && (
+            <button
+              onClick={scrollReviewsToBottom}
+              aria-label="Scroll to latest reviews"
+              className="flex items-center gap-1 text-xs text-gray-400 hover:text-white transition-colors cursor-pointer"
+            >
+              Jump to latest <FaAngleDown />
+            </button>
+          )}
+        </div>
+        <div ref={reviewsContainerRef} className="max-h-[400px] overflow-y-auto w-full max-w-md flex flex-col items-center">
           {[...reviews].reverse().length === 0 ? (
             <div className="w-full max-w-md rounded-xl border border-dashed border-gray-700 py-8 px-4 text-center">
               <p className="text-gray-500">No reviews yet. Be the first to review!</p>
@@ -441,7 +468,7 @@ const ShowProducts = () => {
 
               <div className="px-6 py-5 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] space-y-3">
                 {parseSummary(summary).map((section, i) => {
-                  const style = getSectionStyle(section.heading);
+                  const style = getSectionStyle(i);   // ← heading ki jagah index
                   return (
                     <div key={i} className={`bg-gray-800/40 border-l-4 ${style.accent} rounded-md p-4`}>
                       <h3 className="font-semibold mb-1.5 text-gray-100 text-sm">{cleanHeading(section.heading)}</h3>
