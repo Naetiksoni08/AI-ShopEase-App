@@ -64,8 +64,15 @@ module.exports.DeleteReview = async (req, res) => {
     try {
         const { reviewId, productId } = req.params;
 
-        const review = await reviewModel.findByIdAndDelete(reviewId);
+        const review = await reviewModel.findById(reviewId);
         if (!review) return api.error(res, "Review not found", 404);
+
+        // Ownership check: only the person who wrote the review can delete it
+        if (review.user.toString() !== req.user.id) {
+            return api.error(res, "You can only delete your own reviews", 403);
+        }
+
+        await reviewModel.findByIdAndDelete(reviewId);
 
         const product = await ProductModel.findById(productId);
         if (product) {
@@ -77,6 +84,6 @@ module.exports.DeleteReview = async (req, res) => {
 
         api.success(res, null, "Review deleted successfully");
     } catch (err) {
-        api.error(res, err);
+        api.error(err);
     }
 };

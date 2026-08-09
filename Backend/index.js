@@ -9,7 +9,6 @@ const { auth: authMiddleware } = require("./middlewares/auth");
 const paymentRoutes = require('./paymentapi/paymentapi');
 
 
-
 connectdb();
 
 

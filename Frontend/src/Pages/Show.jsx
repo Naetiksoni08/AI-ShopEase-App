@@ -409,7 +409,7 @@ const ShowProducts = () => {
                   {rev.text}
                 </p>
 
-                {role === "buyer" && (
+                {role === "buyer" && rev.user?._id === userId && (
                   <button
                     className="rounded-lg text-xs bg-red-900/80 hover:bg-red-800 px-3 py-2 mt-4 cursor-pointer text-white transition-colors"
                     onClick={() => deleteReview(rev._id)}
