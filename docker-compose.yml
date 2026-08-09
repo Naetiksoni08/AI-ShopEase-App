@@ -14,8 +14,11 @@ services:
       context: ./Backend
       dockerfile: Dockerfile.backend
     container_name: shopease-backend
-    ports:
-      - "5001:5001"
+    # NOTE: no "ports:" mapping anymore — the backend is no longer
+    # reachable from your host machine directly (try hitting
+    # localhost:5001 after this change, it will fail — that's expected).
+    # It's still reachable from OTHER containers on this compose network,
+    # by its service name "backend", which is exactly what nginx uses.
     env_file:
       - ./Backend/.env
     restart: unless-stopped
@@ -25,11 +28,13 @@ services:
       context: ./Frontend
       dockerfile: Dockerfile.frontend
       args:
-        # Browser-side calls hit this URL directly (not the internal
-        # Docker network), so it must be an address your browser can
-        # actually reach — localhost works because we're publishing
-        # the backend's port to the host above.
-        VITE_API_URL: http://localhost:5001
+        # Empty on purpose: the browser now calls a RELATIVE path like
+        # "/api/product" instead of an absolute URL like
+        # "http://localhost:5001/api/product". A relative path always
+        # resolves against whatever origin the page was loaded from —
+        # so it automatically works whether that's localhost today or
+        # your real domain later on EC2, with zero code changes.
+        VITE_API_URL: ""
     container_name: shopease-frontend
     ports:
       - "80:80"
