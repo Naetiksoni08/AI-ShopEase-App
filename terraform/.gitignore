@@ -1,0 +1,23 @@
+# Local .terraform directories (provider plugins — regenerated via `terraform init`)
+.terraform/
+
+# Terraform state files — NEVER commit these.
+# They can contain resource IDs, IPs, and sometimes sensitive data.
+# In a real team setup this would live in a remote backend (S3 + DynamoDB),
+# not in git at all.
+terraform.tfstate
+terraform.tfstate.backup
+*.tfstate
+*.tfstate.*
+
+# Crash log files
+crash.log
+crash.*.log
+
+# Exclude all .tfvars files if you ever add one (may contain secrets)
+*.tfvars
+*.tfvars.json
+
+# Ignore CLI configuration files
+.terraformrc
+terraform.rc
