@@ -78,8 +78,7 @@ services:
     container_name: shopease-grafana
     restart: unless-stopped
     environment:
-      # tells grafana it's being served under /grafana behind nginx,
-      # otherwise css/js won't load right through the reverse proxy
+      - GF_SERVER_DOMAIN=52.64.235.225
       - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s/grafana/
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
     depends_on:
