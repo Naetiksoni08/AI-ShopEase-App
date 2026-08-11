@@ -1,12 +1,8 @@
-# -----------------------------------------------------------------------
-# docker-compose.yml — runs backend + frontend together for LOCAL testing
-# -----------------------------------------------------------------------
-# Place this file at your project ROOT (one level above Backend/ and
-# Frontend/ folders), so the `context` paths below resolve correctly.
+# docker-compose.yml — spins up backend + frontend together
+# keep this file at project root, one level above Backend/ and Frontend/
 #
-# Run with:   docker compose up --build
-# Stop with:  docker compose down
-# -----------------------------------------------------------------------
+# up:   docker compose up --build
+# down: docker compose down
 
 services:
   backend:
@@ -14,11 +10,9 @@ services:
       context: ./Backend
       dockerfile: Dockerfile.backend
     container_name: shopease-backend
-    # NOTE: no "ports:" mapping anymore — the backend is no longer
-    # reachable from your host machine directly (try hitting
-    # localhost:5001 after this change, it will fail — that's expected).
-    # It's still reachable from OTHER containers on this compose network,
-    # by its service name "backend", which is exactly what nginx uses.
+    # no ports mapping — backend not reachable directly from host anymore
+    # (localhost:5001 won't work, that's expected). still reachable by
+    # other containers using the service name "backend" — nginx uses this
     env_file:
       - ./Backend/.env
     restart: unless-stopped
@@ -28,12 +22,10 @@ services:
       context: ./Frontend
       dockerfile: Dockerfile.frontend
       args:
-        # Empty on purpose: the browser now calls a RELATIVE path like
-        # "/api/product" instead of an absolute URL like
-        # "http://localhost:5001/api/product". A relative path always
-        # resolves against whatever origin the page was loaded from —
-        # so it automatically works whether that's localhost today or
-        # your real domain later on EC2, with zero code changes.
+        # left empty on purpose — frontend calls a relative path like
+        # /api/product instead of a full URL. relative path just resolves
+        # against whatever origin loaded the page, so it works on
+        # localhost and on EC2 without changing anything
         VITE_API_URL: ""
     container_name: shopease-frontend
     ports:
@@ -41,3 +33,54 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+
+  # monitoring stack — host + container metrics, shown in grafana
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: shopease-node-exporter
+    restart: unless-stopped
+    # needs read access to the actual host's proc/sys/root, not the
+    # container's own — that's the whole point of node-exporter
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: shopease-cadvisor
+    restart: unless-stopped
+    # needs docker socket + sys to see per-container stats
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: shopease-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - node-exporter
+      - cadvisor
+    # no ports here either — same idea as backend, only grafana needs
+    # to talk to this, not exposed to the outside directly
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: shopease-grafana
+    restart: unless-stopped
+    environment:
+      # tells grafana it's being served under /grafana behind nginx,
+      # otherwise css/js won't load right through the reverse proxy
+      - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+    depends_on:
+      - prometheus

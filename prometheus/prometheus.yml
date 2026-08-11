@@ -1,0 +1,21 @@
+# prometheus.yml — tells prometheus where to scrape metrics from
+# and how often
+
+global:
+  scrape_interval: 15s     # how often to pull data from each target
+
+scrape_configs:
+  # prometheus scraping its own metrics — useful to confirm it's alive
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # host-level metrics — cpu, memory, disk, network of the EC2 instance
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  # per-container metrics — cpu/memory usage of backend, frontend, etc
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
