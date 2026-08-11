@@ -1,0 +1,134 @@
+---
+# Sets up a fresh EC2 instance for ShopEase: installs Docker + plugins,
+# pulls the repo, adds env files, and brings the app up with compose.
+
+- name: Provision ShopEase EC2 instance (PoC instance B only)
+  hosts: shopease_poc
+  become: true
+
+  tasks:
+
+    - name: Update dnf package cache
+      ansible.builtin.dnf:
+        update_cache: true
+
+    - name: Install Docker, git and unzip
+      ansible.builtin.dnf:
+        name:
+          - docker
+          - git
+          - unzip
+        state: present
+
+    - name: Start and enable Docker service
+      ansible.builtin.systemd:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Add ec2-user to docker group
+      ansible.builtin.user:
+        name: ec2-user
+        groups: docker
+        append: true
+
+    # need a fresh connection for the group change to actually apply
+    - name: Reset connection so docker group membership takes effect
+      ansible.builtin.meta: reset_connection
+
+    - name: Create docker CLI plugins directory
+      ansible.builtin.file:
+        path: "{{ docker_cli_plugins_dir }}"
+        state: directory
+        owner: ec2-user
+        group: ec2-user
+        mode: "0755"
+
+    - name: Get latest Docker Compose release info
+      ansible.builtin.uri:
+        url: "{{ docker_compose_api }}"
+        return_content: true
+      register: compose_release
+      become: false
+
+    - name: Install Docker Compose plugin (version fetched dynamically)
+      ansible.builtin.get_url:
+        url: "https://github.com/docker/compose/releases/download/{{ compose_release.json.tag_name }}/docker-compose-linux-x86_64"
+        dest: "{{ docker_cli_plugins_dir }}/docker-compose"
+        mode: "0755"
+        owner: ec2-user
+        group: ec2-user
+
+    - name: Get latest Docker Buildx release info
+      ansible.builtin.uri:
+        url: "{{ docker_buildx_api }}"
+        return_content: true
+      register: buildx_release
+      become: false
+
+    - name: Install Docker Buildx plugin (version fetched dynamically)
+      ansible.builtin.get_url:
+        url: "https://github.com/docker/buildx/releases/download/{{ buildx_release.json.tag_name }}/buildx-{{ buildx_release.json.tag_name }}.linux-amd64"
+        dest: "{{ docker_cli_plugins_dir }}/docker-buildx"
+        mode: "0755"
+        owner: ec2-user
+        group: ec2-user
+
+    - name: Clone or update ShopEase repository
+      ansible.builtin.git:
+        repo: "{{ repo_url }}"
+        dest: "{{ app_dir }}"
+        version: "{{ repo_branch }}"
+        force: true
+      become: false
+
+    # .env has real secrets (Mongo URI, JWT, Gemini key, Razorpay keys) —
+    # never committed, copied in from files/ locally instead
+    - name: Copy backend .env file to server
+      ansible.builtin.copy:
+        src: "files/backend.env"
+        dest: "{{ app_dir }}/Backend/.env"
+        owner: ec2-user
+        group: ec2-user
+        mode: "0600"
+      become: false
+      when: copy_env_files | default(true)
+
+    - name: Copy frontend .env file to server
+      ansible.builtin.copy:
+        src: "files/frontend.env"
+        dest: "{{ app_dir }}/Frontend/.env"
+        owner: ec2-user
+        group: ec2-user
+        mode: "0600"
+      become: false
+      when: copy_env_files | default(true)
+
+    - name: Build and start containers with Docker Compose
+      ansible.builtin.command:
+        cmd: docker compose up -d --build
+        chdir: "{{ app_dir }}"
+      become: false
+
+    # sanity check — makes sure the app is actually up before we call it done
+    - name: Wait for app to respond on port 80
+      ansible.builtin.uri:
+        url: "http://localhost"
+        status_code: 200
+        timeout: 10
+      register: health_check
+      retries: 6
+      delay: 10
+      until: health_check.status == 200
+      become: false
+
+    - name: Show running containers
+      ansible.builtin.command:
+        cmd: docker compose ps
+        chdir: "{{ app_dir }}"
+      register: compose_ps
+      become: false
+
+    - name: Print container status
+      ansible.builtin.debug:
+        msg: "{{ compose_ps.stdout_lines }}"

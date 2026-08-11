@@ -1,0 +1,11 @@
+---
+# repo + deploy path
+app_dir: /home/ec2-user/E-Commerce
+repo_url: https://github.com/Naetiksoni08/AI-ShopEase-App.git
+repo_branch: master
+
+# fetch latest release versions instead of hardcoding
+docker_compose_api: https://api.github.com/repos/docker/compose/releases/latest
+docker_buildx_api: https://api.github.com/repos/docker/buildx/releases/latest
+
+docker_cli_plugins_dir: /home/ec2-user/.docker/cli-plugins
