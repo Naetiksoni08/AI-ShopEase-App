@@ -2,16 +2,13 @@ const reviewModel = require("../models/Review.models");
 const ProductModel = require("../models/productSchema");
 const OrderModel = require("../models/Order.model");
 const api = require("../utils/api");
+const { calculateAverageRating } = require("../utils/calculateRating");
 
 async function recalculateProductRating(productId) {
     const reviews = await reviewModel.find({ product: productId });
-    const totalReviews = reviews.length;
-    const averageRating = totalReviews
-        ? Number((reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews).toFixed(1))
-        : 0;
+    const { averageRating, totalReviews } = calculateAverageRating(reviews);
     await ProductModel.findByIdAndUpdate(productId, { averageRating, totalReviews });
 }
-
 module.exports.CreateReview = async (req, res) => {
     try {
         const { text, rating } = req.body;

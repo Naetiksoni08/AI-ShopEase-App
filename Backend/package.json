@@ -4,11 +4,9 @@
   "main": "index.js",
   "type": "commonjs",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "dev": "npx nodemon index.js",
-    "start": "node index.js",
-    "seed": "node seed.js",
-    "seedReviews": "node seedReviewsAndOrders.js"
+    "start": "node index.js"
   },
   "keywords": [],
   "author": "",
@@ -26,6 +24,7 @@
     "razorpay": "^2.9.6"
   },
   "devDependencies": {
+    "jest": "^30.4.2",
     "nodemon": "^3.1.14"
   }
 }
