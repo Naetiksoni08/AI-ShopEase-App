@@ -7,7 +7,6 @@ pipeline {
     }
 
     stages {
-
         stage('Checkout') {
             steps {
                 checkout scm
@@ -46,11 +45,14 @@ pipeline {
 
         stage('Health check') {
             steps {
-                sh """
-                    ssh -o StrictHostKeyChecking=no ${DEPLOY_HOST} '
-                        curl -sf http://localhost || exit 1
-                    '
-                """
+                // FIXED: Wrapped the ssh command with sshagent
+                sshagent(credentials: ['ec2-deploy-key']) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ${DEPLOY_HOST} '
+                            curl -sf http://localhost || exit 1
+                        '
+                    """
+                }
             }
         }
     }
