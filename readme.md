@@ -20,6 +20,7 @@ A full-stack, role-based e-commerce platform with AI-powered product insights, s
 - [Architecture](#architecture)
 - [DevOps Pipeline](#devops-pipeline)
   - [Containerization](#containerization)
+  - [Data Persistence](#data-persistence)  
   - [Reverse Proxy](#reverse-proxy)
   - [Infrastructure as Code](#infrastructure-as-code)
   - [Configuration Management](#configuration-management)
@@ -98,8 +99,29 @@ The frontend and backend are each built into separate Docker images via multi-st
 
 <img src="docs/screenshots/containers.png" alt="Docker Compose PS Output Showing 7 Running Services" width="1050" />
 
+---
 
+### Data Persistence
 
+Docker containers are ephemeral by default — anything written inside a container's own
+filesystem is lost when that container is recreated (e.g. during a `docker compose up
+--build` redeploy). Three services in this stack need their data to survive redeploys, so
+each is backed by a named Docker volume:
+
+| Service      | Volume             | What it preserves                          |
+|--------------|---------------------|----------------------------------------------|
+| Jenkins      | `jenkins_home`      | Job configs, build history, credentials, plugins |
+| Prometheus   | `prometheus_data`   | Scraped time-series metrics                    |
+| Grafana      | `grafana_data`      | Dashboards, users, datasource configs           |
+
+Without these, every deploy would silently wipe Jenkins build history and reset Grafana to
+a blank instance — the volumes decouple application data from the container lifecycle, so
+containers can be freely rebuilt/recreated (which happens on every CI/CD deploy) without
+losing state.
+
+> 📸 *Screenshot: `docker volume ls` showing all 3 named volumes*
+
+---
 
 ### Reverse Proxy
 
