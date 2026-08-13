@@ -10,10 +10,22 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
+                script {
+                    // Extract the latest commit message
+                    def commitMsg = sh(script: 'git log -1 --pretty=%B', returnStdout: true).trim()
+
+                    // Check if the message contains [skip ci]
+                    if (commitMsg.contains('[skip ci]')) {
+                        echo "Skipping pipeline execution: [skip ci] detected in commit message."
+                        currentBuild.result = 'ABORTED'
+                        return
+                    }
+                }
             }
         }
 
         stage('Install backend deps') {
+            when { expression { currentBuild.result != 'ABORTED' } }
             steps {
                 dir('Backend') {
                     sh 'npm install'
@@ -22,6 +34,7 @@ pipeline {
         }
 
         stage('Run tests') {
+            when { expression { currentBuild.result != 'ABORTED' } }
             steps {
                 dir('Backend') {
                     sh 'npm test'
@@ -30,6 +43,7 @@ pipeline {
         }
 
         stage('Deploy to server') {
+            when { expression { currentBuild.result != 'ABORTED' } }
             steps {
                 sshagent(credentials: ['ec2-deploy-key']) {
                     sh """
@@ -44,8 +58,8 @@ pipeline {
         }
 
         stage('Health check') {
+            when { expression { currentBuild.result != 'ABORTED' } }
             steps {
-                // FIXED: Wrapped the ssh command with sshagent
                 sshagent(credentials: ['ec2-deploy-key']) {
                     sh """
                         ssh -o StrictHostKeyChecking=no ${DEPLOY_HOST} '
@@ -63,6 +77,9 @@ pipeline {
         }
         failure {
             echo 'Pipeline failed — check the stage logs above.'
+        }
+        aborted {
+            echo 'Pipeline skipped — [skip ci] detected in commit message.'
         }
     }
 }
