@@ -119,7 +119,10 @@ a blank instance — the volumes decouple application data from the container li
 containers can be freely rebuilt/recreated (which happens on every CI/CD deploy) without
 losing state.
 
-> 📸 *Screenshot: `docker volume ls` showing all 3 named volumes*
+## 🔹 Docker Volumes Persistence Verification
+
+<img src="docs/screenshots/dockerVolume.png" alt="Docker Volume LS Output" width="650" />
+
 
 ---
 
